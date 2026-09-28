@@ -103,17 +103,30 @@ as a home-screen app, passkey sign-in, offline support, sync across your phone a
 You need [Docker](https://docs.docker.com/get-docker/) with Compose.
 
 ```bash
-git clone https://github.com/DuarteSantos8/openGym
-cd openGym
+git clone https://github.com/brizziinfinite/opengym
+cd opengym
 cp .env.example .env
-docker compose pull   # grab prebuilt images (amd64 + arm64) — skip to build from source instead
-docker compose up -d
+docker compose up -d --build
 ```
 
-Open **http://localhost:8080**, tap **Create profile**, and you're in. First launch downloads
-the exercise media (~140 MB) once. Prefer building the images yourself instead of pulling from
-`ghcr.io`? Drop the `pull` step and run `docker compose up -d --build` — you don't need Node or
-a build step locally either way.
+The images are always built from this repository — you don't need Node or a build step
+locally. First launch downloads the exercise media (~140 MB) once.
+
+The `web` container only **exposes** port 80 to the Docker network; it doesn't publish a port
+on the host. That is what a panel like EasyPanel expects: point your domain at the `web`
+service, port **80**, and the panel's proxy handles HTTPS.
+
+**Testing on your own machine?** Publish the port with a `docker-compose.override.yml` next to
+`docker-compose.yml` (Compose picks it up automatically; keep it out of the server):
+
+```yaml
+services:
+  web:
+    ports:
+      - "8080:80"
+```
+
+Then open **http://localhost:8080** and tap **Create profile**.
 
 > Want it reachable from your phone over the internet with passkeys? You'll need an HTTPS
 > domain — a two-line change in `.env`. See **[docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)**.
@@ -165,7 +178,6 @@ All via `.env` (see `.env.example`):
 |---------------|------------------------------------------------------|-------------------------|
 | `RP_ID`       | Hostname passkeys are bound to                       | `localhost`             |
 | `ORIGIN`      | Full URL the app is served from                      | `http://localhost:8080` |
-| `WEB_PORT`    | Host port for the web UI                             | `8080`                  |
 | `RP_NAME`     | Name shown in the passkey prompt                     | `openGym`               |
 | `ADMIN_UIDS`  | User ids that get the admin dashboard (comma-separated) | *(none)*             |
 | `INVITE_ONLY` | Require an invite code to create a profile           | *(off)*                 |
