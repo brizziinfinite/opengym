@@ -228,6 +228,8 @@ export default {
   "This browser doesn't support passkeys — you can still use openGym locally on this device.": '此浏览器不支持通行密钥——你仍可在本设备上本地使用 openGym。',
   'Continue without account': '不用账号继续',
   'Passkeys use {0} — no passwords.': '通行密钥使用{0}——没有密码。',
+  'fingerprint or face unlock': '指纹或面部解锁',
+  'your fingerprint, face or PIN': '指纹、面容或 PIN 码',
   'Each profile keeps its own plan, workouts & body weight.': '每个档案有自己的计划、训练和体重。',
   'Account': '账号',
   'Signed in with passkey — data syncs to this profile.': '已用通行密钥登录——数据同步到此档案。',

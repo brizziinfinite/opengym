@@ -241,6 +241,8 @@ export default {
   "This browser doesn't support passkeys — you can still use openGym locally on this device.": 'Dieser Browser unterstützt keine Passkeys — du kannst openGym trotzdem lokal auf diesem Gerät nutzen.',
   'Continue without account': 'Ohne Konto fortfahren',
   'Passkeys use {0} — no passwords.': 'Passkeys nutzen {0} — keine Passwörter.',
+  'fingerprint or face unlock': 'Fingerabdruck oder Gesichtsentsperrung',
+  'your fingerprint, face or PIN': 'Fingerabdruck, Gesicht oder PIN',
   'Each profile keeps its own plan, workouts & body weight.': 'Jedes Profil hat seinen eigenen Plan, Trainings & Körpergewicht.',
   // --- settings ---
   'Account': 'Konto',

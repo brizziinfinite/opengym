@@ -228,6 +228,8 @@ export default {
   "This browser doesn't support passkeys — you can still use openGym locally on this device.": 'यह ब्राउज़र पासकी सपोर्ट नहीं करता — फिर भी आप इस डिवाइस पर openGym लोकली इस्तेमाल कर सकते हैं।',
   'Continue without account': 'बिना खाते के जारी रखें',
   'Passkeys use {0} — no passwords.': 'पासकी {0} का उपयोग करती हैं — कोई पासवर्ड नहीं।',
+  'fingerprint or face unlock': 'फ़िंगरप्रिंट या फ़ेस अनलॉक',
+  'your fingerprint, face or PIN': 'फ़िंगरप्रिंट, चेहरा या PIN',
   'Each profile keeps its own plan, workouts & body weight.': 'हर प्रोफ़ाइल की अपनी योजना, वर्कआउट और वज़न होते हैं।',
   'Account': 'खाता',
   'Signed in with passkey — data syncs to this profile.': 'पासकी से साइन इन — डेटा इस प्रोफ़ाइल से सिंक होता है।',

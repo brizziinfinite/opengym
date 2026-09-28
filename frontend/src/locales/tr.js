@@ -228,6 +228,8 @@ export default {
   "This browser doesn't support passkeys — you can still use openGym locally on this device.": 'Bu tarayıcı geçiş anahtarlarını desteklemiyor — yine de openGym’i bu cihazda yerel olarak kullanabilirsin.',
   'Continue without account': 'Hesapsız devam et',
   'Passkeys use {0} — no passwords.': 'Geçiş anahtarları {0} kullanır — şifre yok.',
+  'fingerprint or face unlock': 'parmak izi veya yüz tanıma',
+  'your fingerprint, face or PIN': 'parmak izi, yüz veya PIN',
   'Each profile keeps its own plan, workouts & body weight.': 'Her profilin kendi planı, antrenmanları ve vücut ağırlığı vardır.',
   'Account': 'Hesap',
   'Signed in with passkey — data syncs to this profile.': 'Geçiş anahtarıyla giriş yapıldı — veriler bu profille eşitlenir.',
