@@ -33,10 +33,13 @@ export function browserLang() {
 
 const localePacks = import.meta.glob('../locales/*.js')
 const instrPacks = import.meta.glob('../instr/*.js')
+// Exercise names are English in the dataset; a language with a pack in src/names/ shows its own.
+const namePacks = import.meta.glob('../names/*.js')
 
 let lang = 'en'
 let dict = {}
 let instr = null            // { exId: [steps] } for the current language, null = English
+let names = null            // { exId: name } for the current language, null = English
 let version = 0
 const subs = new Set()
 const notify = () => { version++; subs.forEach(f => f()) }
@@ -52,6 +55,10 @@ export function t(s, ...args) {
 }
 // Instructions for an exercise in the current language (English steps as fallback).
 export const instrFor = ex => (instr && instr[ex.id]) || ex.st || []
+// Display name of an exercise in the current language. Custom exercises keep what the user typed.
+export const nameOf = ex => (ex && names && !ex.custom && names[ex.id]) || (ex && ex.n) || ''
+// True while exercise names come from a names pack — those are already cased for display.
+export const namesLocalized = () => !!names
 
 export async function setLang(l) {
   if (!LANGS[l]) l = 'en'
@@ -61,6 +68,10 @@ export async function setLang(l) {
     dict = l === 'en' ? {} : (await localePacks['../locales/' + l + '.js']()).default
     instr = l === 'en' || !INSTR_LANGS.includes(l) ? null : (await instrPacks['../instr/' + l + '.js']()).default
   } catch (e) { dict = {}; instr = null }
+  try {
+    const np = namePacks['../names/' + l + '.js']
+    names = np ? (await np()).default : null
+  } catch (e) { names = null }
   notify()
 }
 
