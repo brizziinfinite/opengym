@@ -24,3 +24,6 @@ graphify-out/
 # Scratch batches for scripts/translate-instructions-pt.mjs
 scripts/.instr-pt/
 scripts/.names-pt/
+
+# Local-only Compose overrides (e.g. publishing the web port for testing)
+docker-compose.override.yml

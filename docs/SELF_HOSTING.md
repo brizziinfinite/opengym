@@ -71,7 +71,6 @@ Then set your domain in `.env` and restart:
 # .env
 RP_ID=gym.example.com
 ORIGIN=https://gym.example.com
-WEB_PORT=8080
 RP_NAME=openGym
 ```
 
@@ -236,7 +235,7 @@ act on it.
 | No passkey prompt on my phone | You're on `http://` or an IP, not HTTPS. Set up a domain (section 3). |
 | "verification failed" on login | `RP_ID`/`ORIGIN` don't match the URL in the address bar. Make them exact, restart. |
 | Media didn't download | `docker compose logs media`. Re-run `docker compose up -d`, or run `./scripts/fetch-media.sh`. |
-| Port 8080 already used | Set `WEB_PORT=9090` in `.env` (and update `ORIGIN` for local testing). |
+| Port 8080 already used | The `web` container only exposes port 80; the host port comes from your `docker-compose.override.yml` (see the README's Quick start). Change it there, e.g. `"9090:80"`, and set `ORIGIN=http://localhost:9090` in `.env`. |
 | No "Notifications" option in Settings | Requires a signed-in profile and HTTPS (or `localhost`) — guest mode and plain HTTP over LAN can't subscribe. |
 | Day reminder fires at the wrong time | Toggle it off and on in Settings so it re-detects your browser's timezone (also happens automatically on every app load — see section 6). |
 | Want to reset a stuck login | Delete the cookie in your browser; sessions are just signed cookies. |
