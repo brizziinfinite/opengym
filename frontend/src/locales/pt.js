@@ -173,7 +173,7 @@ export default {
   'Load starter plan (PPL)': 'Carregar plano inicial (PPL)',
   'Push Day': 'Treino Push',
   'Pull Day': 'Treino Pull',
-  'Leg Day': 'Treino de pernas',
+  'Leg Day': 'Treino Pernas',
   'Build my own plan': 'Criar meu próprio plano',
   '{0} week streak': 'sequência de {0} semanas',
   'this week': 'esta semana',
