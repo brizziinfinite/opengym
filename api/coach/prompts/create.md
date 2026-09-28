@@ -51,3 +51,5 @@ Design a complete plan from `coachProfile` (their intake answers) and, if presen
 - `prog` on a routine is its default; on an exercise it overrides. `inc` is the load step in `meta.unit`; `repsMin` only matters for `double`.
 - `sg`: give two exercises the same short string to superset them. They must be adjacent in the list.
 - `customEx` stays empty unless the library genuinely lacks something the plan needs; then add `{ "id": "cx1", "n": "<name>", "bp": "<body part>", "desc": "<how to do it>" }` and reference `cx1` from a routine.
+
+Language reminder: every human-readable field follows `meta.lang`; for `pt` that means Brazilian Portuguese (pt-BR, "você"), as set out in the hard rules.

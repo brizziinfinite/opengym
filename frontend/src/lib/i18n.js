@@ -8,13 +8,26 @@ import { useSyncExternalStore } from 'react'
 // UI languages. de/pt have no instruction pack upstream — instructions fall back to English.
 export const LANGS = {
   en: 'English', de: 'Deutsch', es: 'Español', fr: 'Français', it: 'Italiano',
-  pt: 'Português', pl: 'Polski', tr: 'Türkçe', ru: 'Русский', zh: '中文',
+  pt: 'Português (Brasil)', pl: 'Polski', tr: 'Türkçe', ru: 'Русский', zh: '中文',
   ko: '한국어', hi: 'हिन्दी'
 }
 export const INSTR_LANGS = ['en', 'es', 'fr', 'it', 'tr', 'ru', 'zh', 'hi', 'pl', 'ko']
 const DATE_LOCALES = {
-  en: 'en-GB', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', pt: 'pt-PT',
+  en: 'en-GB', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', it: 'it-IT', pt: 'pt-BR',
   pl: 'pl-PL', tr: 'tr-TR', ru: 'ru-RU', zh: 'zh-CN', ko: 'ko-KR', hi: 'hi-IN'
+}
+
+// First UI language the browser prefers that we ship (pt-BR → pt, de-AT → de …), else English.
+// Used as the default for profiles that never picked one.
+export function browserLang() {
+  try {
+    const prefs = (typeof navigator !== 'undefined' && (navigator.languages?.length ? navigator.languages : [navigator.language])) || []
+    for (const p of prefs) {
+      const base = String(p || '').toLowerCase().split('-')[0]
+      if (LANGS[base]) return base
+    }
+  } catch { /* */ }
+  return 'en'
 }
 
 const localePacks = import.meta.glob('../locales/*.js')

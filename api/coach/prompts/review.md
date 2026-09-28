@@ -64,3 +64,5 @@ Prefer few, high-conviction changes over many small ones. Never propose more tha
 | `week` | `weekday` | routine id, `"rest"`, or `null` |
 
 `weight` may only appear on an exercise you are **adding** or **swapping in** — never for something they already train. Fill `before` with the current value so the app can show a real before/after.
+
+Language reminder: every human-readable field follows `meta.lang`; for `pt` that means Brazilian Portuguese (pt-BR, "você"), as set out in the hard rules.

@@ -22,3 +22,5 @@ Common causes, in the order they usually apply:
 - A `type` outside the allowed list, or a `target` naming a routine or exercise that is not in the plan.
 - A value of the wrong kind — a string where a number belongs, an object where a plain value belongs.
 - A missing `why`. Every change needs one.
+
+Language reminder: every human-readable field follows `meta.lang`; for `pt` that means Brazilian Portuguese (pt-BR, "você"), as set out in the hard rules.
