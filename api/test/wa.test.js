@@ -65,3 +65,25 @@ test('webhook: only messages from people', () => {
   assert.equal(parseWebhook({ ...base, data: { ...base.data, key: { ...base.data.key, remoteJid: '123@g.us' } } }), null);
   assert.equal(parseWebhook({ event: 'connection.update' }), null);
 });
+
+import { nextPrescription } from '../wa/progression.js';
+import { strengthDays, exercisesFor } from '../wa/plan.js';
+
+test('a plain FIZ never raises the load; the effort rating does', () => {
+  const cfg = { id: '0289', sets: 3, reps: 12, repsMin: 8 }, routine = { prog: 'double' }, p = { age: 30, level: 'returning' };
+  const sets = [1, 2, 3].map(() => ({ w: 20, r: 12, done: true }));
+  const S = extra => ({ workouts: [{ d: '2026-09-28', entries: [{ id: '0289', sets, target: { reps: 12, sets: 3 }, ...extra }] }] });
+  assert.equal(nextPrescription(S({}), cfg, routine, p).kind, 'up');
+  assert.equal(nextPrescription(S({ unknown: true }), cfg, routine, p).kind, 'hold');
+  assert.equal(nextPrescription(S({ unknown: true, effort: 2 }), cfg, routine, p).kind, 'up');
+  assert.equal(nextPrescription(S({ unknown: true, effort: 5 }), cfg, routine, p).kind, 'deload');
+  assert.ok(nextPrescription(S({}), cfg, routine, p).weight - 20 <= 1.01, 'careful profiles step ≤ 5 %');
+});
+
+test('beginners are capped at 3 strength days; 2 days means 7 compounds', () => {
+  assert.equal(strengthDays({ level: 'sedentary', days: [1, 2, 3, 4, 5] }), 3);
+  assert.equal(strengthDays({ level: 'regular', days: [1, 2, 3, 4, 5] }), 5);
+  assert.equal(exercisesFor({ level: 'regular', days: [1, 4], sessionMin: 60 }), 7);
+  const { routines } = buildPlan({ age: 30, level: 'regular', goal: 'muscle', setup: 'gym', days: [1, 4], sessionMin: 60, conditions: [] });
+  routines.forEach(r => assert.ok(r.ex.length >= 7, r.name));
+});

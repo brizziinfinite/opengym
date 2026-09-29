@@ -59,8 +59,8 @@ const COMPOUND = new Set(['squat', 'squatSafe', 'hinge', 'hingeSafe', 'legs2', '
 const R = {
   seniorA: ['Força e equilíbrio A', 'legs', ['sitstand', 'legs2Safe', 'hpushEasy', 'hpull', 'balance', 'calf', 'coreSafe']],
   seniorB: ['Força e equilíbrio B', 'legs', ['squatSafe', 'hpull', 'hingeSafe', 'hpushEasy', 'balance', 'calf', 'coreSafe']],
-  fullA: ['Corpo inteiro A', 'figureStrength', ['squat', 'hpush', 'hpull', 'hinge', 'lateral', 'core', 'calf']],
-  fullB: ['Corpo inteiro B', 'figureStrength', ['hinge', 'vpush', 'vpull', 'legs2', 'biceps', 'triceps', 'core2']],
+  fullA: ['Corpo inteiro A', 'figureStrength', ['squat', 'hpush', 'hpull', 'hinge', 'vpush', 'core', 'calf', 'lateral']],
+  fullB: ['Corpo inteiro B', 'figureStrength', ['hinge', 'vpull', 'legs2', 'ipush', 'hpull', 'core2', 'calf', 'biceps']],
   fullC: ['Corpo inteiro C', 'figureStrength', ['legs2', 'ipush', 'hpull', 'legcurl', 'rear', 'core', 'calf']],
   upperA: ['Membros superiores A', 'arm', ['hpush', 'hpull', 'vpush', 'vpull', 'lateral', 'triceps', 'biceps']],
   upperB: ['Membros superiores B', 'arm', ['ipush', 'vpull', 'hpull', 'vpush', 'rear', 'biceps', 'triceps']],
@@ -89,11 +89,18 @@ export function allowedEquipment(profile) {
 // Beginner over 50, or anyone 65+: legs and balance first.
 export const isSenior = p => (p.age >= 65) || (p.age >= 50 && p.level === 'sedentary');
 
+// Strength days a profile gets. Beginners (sedentary / returning) and seniors are capped at 3:
+// more days of lifting is not more progress for them, and the days they offered beyond that
+// become walking days (WHO: 150–300 min/week of aerobic activity).
+export const MAX_STRENGTH_DAYS = p => (isSenior(p) || p.level !== 'regular' ? 3 : 6);
+export function strengthDays(p) {
+  return Math.min(MAX_STRENGTH_DAYS(p), Math.max(2, (p.days || []).length || 3));
+}
 export function splitFor(p) {
-  const d = Math.min(6, Math.max(2, (p.days || []).length || 3));
-  if (isSenior(p)) return d >= 3 ? ['seniorA', 'seniorB', 'seniorA'].slice(0, Math.min(d, 3)) : ['seniorA', 'seniorB'];
+  const d = strengthDays(p);
+  if (isSenior(p)) return d >= 3 ? ['seniorA', 'seniorB', 'seniorA'] : ['seniorA', 'seniorB'];
   if (d === 2) return ['fullA', 'fullB'];
-  if (d === 3) return p.level === 'regular' ? ['push', 'pull', 'legs'] : ['fullA', 'fullB', 'fullC'];
+  if (d === 3) return p.level === 'regular' ? ['fullA', 'fullB', 'fullC'] : ['fullA', 'fullB', 'fullC'];
   if (d === 4) return ['upperA', 'lowerA', 'upperB', 'lowerB'];
   if (d === 5) return ['push', 'pull', 'legs', 'upperA', 'lowerA'];
   return ['push', 'pull', 'legs', 'push', 'pull', 'legs'];
@@ -101,7 +108,10 @@ export function splitFor(p) {
 
 export function exercisesFor(p) {
   const m = p.sessionMin || (isSenior(p) ? 30 : 45);
-  return m <= 30 ? 5 : m <= 45 ? 5 : m <= 60 ? 6 : 7;
+  const n = m <= 30 ? 5 : m <= 45 ? 5 : m <= 60 ? 6 : 7;
+  // Two days a week has to cover the whole body each time: one more slot, and the templates
+  // for 2 days are compound-only, so the extra slot is a big lift rather than an isolation.
+  return strengthDays(p) === 2 ? n + 1 : n;
 }
 
 export function doseFor(p, compound) {

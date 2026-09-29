@@ -641,7 +641,9 @@ startCadence({ users: () => db.users, userNow });
 const seenMsg = new Set();
 const usedLinks = new Set();
 const magicLink = user => ORIGIN.replace(/\/+$/, '') + '/api/wa/login?t=' + encodeURIComponent(sign('wa:' + user.id + ':' + (Date.now() + 15 * 60000)));
-initFlow({ db: { get users() { return db.users; }, set users(v) { db.users = v; } }, saveDb, readState, writeState, userNow, magicLink, deleteUser });
+const WA_INSTR = (() => { try { return JSON.parse(fs.readFileSync(new URL('./wa/instructions.json', import.meta.url), 'utf8')); } catch { return {}; } })();
+initFlow({ db: { get users() { return db.users; }, set users(v) { db.users = v; } }, saveDb, readState, writeState, userNow, magicLink, deleteUser,
+  origin: ORIGIN.replace(/\/+$/, ''), instructions: id => WA_INSTR[id] });
 startScheduler({ db: { get users() { return db.users; } }, saveDb, readState, userNow });
 
 http.createServer(async (req, res) => {

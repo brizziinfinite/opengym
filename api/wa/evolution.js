@@ -25,6 +25,13 @@ export async function sendText(number, text) {
   await call('/message/sendText', { number, text, delay: 800 });
 }
 
+// An exercise animation. WhatsApp only plays a GIF when it is sent as a video with the gif
+// flag, so the file goes as mediatype 'video' from the app's own /gif/ URL (served by nginx).
+export async function sendGif(number, url, caption) {
+  if (!evolutionConfigured()) { console.log('[wa:dry-run:gif]', number, url, '\n' + caption); return; }
+  await call('/message/sendMedia', { number, mediatype: 'video', mimetype: 'video/mp4', media: url, caption, fileName: 'exercicio.mp4' });
+}
+
 // Media of an incoming message, as { base64, mimetype } — used for equipment photos.
 export async function mediaOf(messageKeyId) {
   const r = await call('/chat/getBase64FromMediaMessage', { message: { key: { id: messageKeyId } }, convertToMp4: false });

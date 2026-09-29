@@ -17,8 +17,13 @@ const { default: PT } = await import(pathToFileURL(join(root, 'frontend/src/name
 const out = join(root, 'api/wa/exercises.json')
 const data = Object.fromEntries(EXDB.map(e => [e.id, { pt: PT[e.id] || e.n, en: e.n, eq: e.eq, bp: e.bp, tg: e.tg, gif: e.gif }]))
 const json = JSON.stringify(data) + '\n'
+// pt-BR instruction steps, sent with "COMO n" on WhatsApp.
+const { default: INSTR } = await import(pathToFileURL(join(root, 'frontend/src/instr/pt.js')).href)
+const outInstr = join(root, 'api/wa/instructions.json')
+const jsonInstr = JSON.stringify(INSTR) + '\n'
 if (process.argv.includes('--check')) {
   let cur = null; try { cur = readFileSync(out, 'utf8') } catch {}
-  if (cur !== json) { console.error('api/wa/exercises.json is out of date — run: node scripts/build-wa-data.mjs'); process.exit(1) }
-  console.log('api/wa/exercises.json in sync.')
-} else { writeFileSync(out, json); console.log(`Wrote ${out} (${EXDB.length} exercises, ${(json.length / 1024).toFixed(0)} KB)`) }
+  let curI = null; try { curI = readFileSync(outInstr, 'utf8') } catch {}
+  if (cur !== json || curI !== jsonInstr) { console.error('api/wa/*.json is out of date — run: node scripts/build-wa-data.mjs'); process.exit(1) }
+  console.log('api/wa/exercises.json and instructions.json in sync.')
+} else { writeFileSync(out, json); writeFileSync(outInstr, jsonInstr); console.log(`Wrote ${out} (${EXDB.length} exercises, ${(json.length / 1024).toFixed(0)} KB) and instructions.json (${(jsonInstr.length / 1024).toFixed(0)} KB)`) }

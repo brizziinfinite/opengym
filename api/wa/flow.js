@@ -10,11 +10,20 @@
  * answers: FIZ, a free-text log, PESO 82, or nothing at all — the assistant comes to them.
  */
 import crypto from 'node:crypto';
-import { sendText, mediaOf } from './evolution.js';
+import { sendText, sendGif, mediaOf } from './evolution.js';
 import { detectEquipment, parseLog, geminiConfigured } from './gemini.js';
 import { buildPlan, exName, isSenior, EX } from './plan.js';
 import { isYes, isNo, numbers, firstNumber, parseDays, parseTime, parseBody, parseWeight, norm, listDays, DAY_NAMES } from './text.js';
 import { week, month, benefitOf, goalLine, addDays } from './progress.js';
+import { nextPrescription, weeksAway } from './progression.js';
+
+// Words that mean "stop the session and check on the person" — matched before any command,
+// answered with a fixed script the model never rewrites. Sources: ACSM signs to terminate
+// exercise; SAMU is 192 in Brazil.
+const RED_FLAGS = /dor no peito|aperto no peito|peito apertado|falta de ar|sem ar|tontura|tonto|tonta|desmai|palpita|coracao (acelerado|disparado)|dor no braco|dor na mandibula|suor frio|visao (turva|embacada)|confus/;
+const RED_FLAG_REPLY = '🛑 *Pare agora e sente-se.* Respire devagar.\n\n' +
+  'Se não passar em poucos minutos, ou se for *dor ou aperto no peito, falta de ar, dor no braço ou na mandíbula, suor frio ou desmaio*: *ligue 192 (SAMU)* ou peça para alguém ligar.\n\n' +
+  'Pausei seu plano. Converse com seu médico e, quando estiver tudo bem, me escreva *LIBERADO*. Estou aqui.';
 
 export const TZ = process.env.WA_TZ || 'America/Sao_Paulo';
 let D;   // injected: { db, saveDb, readState, writeState, userNow, magicLink }
@@ -63,32 +72,57 @@ const lastWeight = (S, id) => S.exWeights?.[id]?.w || 0;
 /* ---------------- messages ---------------- */
 const say = (user, text) => sendText(user.phone, text);
 
-function workoutText(S, r) {
+const kg = v => String(round1(v)).replace('.', ',') + ' kg';
+const round1 = v => Math.round(v * 10) / 10;
+
+// The plan as it reads in a message. With `S` history and a profile, each line carries today's
+// prescription from the progression engine (target load / reps / seconds and why).
+function workoutText(S, r, profile) {
   return r.ex.map((e, i) => {
-    const w = lastWeight(S, e.id);
-    const dose = e.mode === 'time' ? `${e.sets} × ${e.sec}s` : `${e.sets} × ${e.repsMin ? e.repsMin + '–' + e.reps : e.reps}`;
-    return `${i + 1}. ${exName(e.id, S)} — ${dose}${w ? ` (última: ${String(w).replace('.', ',')} kg)` : ''}`;
+    const name = exName(e.id, S);
+    if (e.mode === 'time') {
+      const p = profile ? nextPrescription(S, e, r, profile) : { kind: 'off' };
+      const sec = p.sec || e.sec;
+      return `${i + 1}. ${name} — ${e.sets} × ${sec}s${p.kind === 'up' ? ' ⬆️' : ''}`;
+    }
+    const p = profile ? nextPrescription(S, e, r, profile) : { kind: 'off' };
+    const reps = p.reps || (e.repsMin ? e.repsMin + '–' + e.reps : e.reps);
+    const w = p.weight != null ? p.weight : lastWeight(S, e.id);
+    const load = w > 0 ? ` · *${kg(w)}*${p.kind === 'up' ? ' ⬆️' : p.kind === 'deload' ? ' ⬇️' : ''}` : (p.kind === 'first' ? ' · comece leve' : '');
+    return `${i + 1}. ${name} — ${e.sets} × ${reps}${load}`;
   }).join('\n');
 }
 
 export function dailyMessage(user, S, r) {
   const p = S.profile || {};
-  const h = +((D.userNow(user.wa?.tz || TZ) || {}).hhmm || '08:00').slice(0, 2);
+  const wp = user.wa?.profile || {};
+  const now = D.userNow(user.wa?.tz || TZ) || {};
+  const h = +(now.hhmm || '08:00').slice(0, 2);
   const hi = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
-  return `${hi}, ${first(user)}! Hoje é dia de *${r.name}* 💪\n\n${workoutText(S, r)}\n\n` +
-    `✅ *Por que hoje importa:* ${benefitOf(r, p)}\n\n` +
-    (p.conditions?.includes('hypertension') ? '⚠️ Respire durante o esforço (solte o ar ao fazer força) e não vá até a falha.\n\n' : '') +
-    `Quando terminar, responda *FIZ*. Se quiser, me conte as cargas: _"supino 3x10 40kg"_.\nVer os vídeos dos exercícios: responda *LINK*.`;
+  const cue = wp.cue ? ` ${wp.cue.charAt(0).toUpperCase() + wp.cue.slice(1)}:` : '';
+  const away = weeksAway(S, now.date || new Date().toISOString().slice(0, 10));
+  const back = away >= 4 ? '\n\n🔁 Faz mais de um mês. Hoje conta como recomeço: metade das séries e cargas bem leves. Mudou alguma coisa na sua saúde? Se sim, me conte antes.'
+    : away >= 2 ? '\n\n🔁 Ficou um tempo parado: hoje faça 2 séries de cada e uns 10 % menos carga.' : '';
+  const first_ = !user.wa?.safetyShown;
+  return `${hi}, ${first(user)}!${cue} hoje é dia de *${r.name}* 💪\n\n` +
+    `🔥 Aquecer: 5 min de caminhada ou marcha no lugar, e a 1ª série do primeiro exercício bem leve.\n\n` +
+    `${workoutText(S, r, wp)}\n\n` +
+    `✅ *Por que hoje importa:* ${benefitOf(r, wp)}` +
+    (p.conditions?.includes('hypertension') ? '\n\n⚠️ Solte o ar ao fazer força, nunca prenda a respiração, e pare antes de chegar no limite. Se tiver aparelho, meça a pressão antes: acima de 160/100, hoje é só caminhada leve.' : '') +
+    (p.conditions?.includes('diabetes') ? '\n\n⚠️ Meça a glicemia antes: abaixo de 70, não treine (coma algo e meça de novo em 15 min). Leve uma bala.' : '') +
+    back +
+    (first_ ? '\n\n🛑 Se sentir dor no peito, tontura, falta de ar fora do normal ou desmaio: pare, sente-se e me avise. Em caso grave, ligue 192.' : '') +
+    `\n\nQuando terminar, responda *FIZ*. Quer ver como faz um exercício? *COMO 2* (o número). Cargas: _"supino 3x10 40kg"_.`;
 }
 
 function planSummary(S, p) {
   const days = Object.keys(S.week).map(Number);
   return `*Seu plano* (${days.length}× por semana: ${listDays(days)} às ${p.time})\n\n` +
-    S.routines.map(r => `*${r.name}*\n${workoutText(S, r)}`).join('\n\n');
+    S.routines.map(r => `*${r.name}*\n${workoutText(S, r, p)}`).join('\n\n');
 }
 
 const HELP = '*Comandos*\n' +
-  '*HOJE* – treino de hoje\n*FIZ* – marcar o treino como feito\n*PESO 82,5* – registrar seu peso\n' +
+  '*HOJE* – treino de hoje\n*FIZ* – marcar o treino como feito\n*COMO 2* – ver como fazer o exercício 2\n*CAMINHEI 20* – registrar caminhada\n*PESO 82,5* – registrar seu peso\n' +
   '*RESUMO* – sua semana · *MÊS* – seu mês\n*PLANO* – ver o plano · *LINK* – abrir no app\n' +
   '*HORÁRIO* – mudar dias/horário · *REFAZER* – refazer o cadastro\n*PAUSAR* / *VOLTAR* – pausar lembretes\n*PARAR* – não receber mais · *APAGAR* – apagar meus dados';
 
@@ -111,6 +145,17 @@ async function handle(msg) {
   }
   const t = norm(msg.text);
   const wa = user.wa || (user.wa = { step: 'active', tz: TZ });
+
+  if (RED_FLAGS.test(t) && !/^liberad/.test(t)) {
+    wa.redFlagAt = new Date().toISOString(); wa.paused = true; wa.awaitEffort = false; wa.awaitCheckin = false;
+    if (wa.step === 'active') wa.step = 'paused_health';
+    D.saveDb();
+    return say(user, RED_FLAG_REPLY);
+  }
+  if (wa.step === 'paused_health') {
+    if (/liberad|tudo bem|passou|estou bem|melhorei/.test(t)) { wa.step = 'active'; wa.paused = false; D.saveDb(); return say(user, 'Que bom! Plano de volta, com calma: a próxima sessão vai um pouco mais leve. Se qualquer sintoma voltar, pare e me avise. 💚'); }
+    return say(user, 'Seu plano está pausado por segurança. Quando tiver falado com o médico e estiver bem, me escreva *LIBERADO*.');
+  }
 
   // Commands that work at any step
   if (/^(parar|sair|cancelar|stop)$/.test(t)) { wa.optedOut = true; D.saveDb(); return say(user, 'Pronto, não vou mais te mandar mensagens. Se quiser voltar, é só escrever *VOLTAR*. 👋'); }
@@ -213,6 +258,10 @@ async function onboarding(user, msg, t) {
       if (!d.days?.length) { D.saveDb(); return say(user, 'Quais *dias da semana* você pode? Ex.: _seg qua sex_'); }
       if (!d.time) { D.saveDb(); return say(user, 'E que *horário*? Ex.: _7h_ ou _18:30_'); }
       if (d.days.length < 2) { d.days = null; D.saveDb(); return say(user, 'Para ter resultado, o mínimo recomendado é *2 dias por semana*. Quais dias você consegue? Ex.: _ter qui_'); }
+      return next('cue', 'Última: *onde* e *depois de quê* você vai treinar? Ter isso decidido é o que mais ajuda a não pular.\nEx.: _na sala, depois do café_ ou _na academia, saindo do trabalho_');
+    }
+    case 'cue': {
+      d.cue = String(msg.text || '').trim().slice(0, 80) || null;
       return finishOnboarding(user);
     }
     default:
@@ -220,12 +269,12 @@ async function onboarding(user, msg, t) {
   }
 }
 const conditionsQ = () => `Você tem alguma destas condições? Responda os números (ex.: _1 3_) ou *0* se nenhuma:\n${opts(CONDITIONS)}`;
-const scheduleQ = () => 'Última pergunta! Quais *dias e horário* você pode treinar?\nEx.: _seg qua sex 7h_ ou _terça e quinta 18:30_';
+const scheduleQ = () => 'Quase lá! Quais *dias e horário* você pode treinar?\nEx.: _seg qua sex 7h_ ou _terça e quinta 18:30_';
 
 async function finishOnboarding(user) {
   const d = user.wa.draft;
   const profile = { age: d.age, sex: d.sex, heightCm: d.heightCm, goal: d.goal, level: d.level, setup: d.setup, equipment: d.equipment || null,
-    days: d.days, time: d.time, conditions: d.conditions || [], parq: d.parq || [], clearance: !!d.clearance };
+    days: d.days, time: d.time, cue: d.cue || null, conditions: d.conditions || [], parq: d.parq || [], clearance: !!d.clearance };
   const plan = buildPlan(profile);
   const S = load(user);
   const iso = today(user);
@@ -246,7 +295,9 @@ async function finishOnboarding(user) {
   D.saveDb();
   const bmi = d.heightCm ? d.weightKg / Math.pow(d.heightCm / 100, 2) : null;
   const senior = isSenior(profile);
+  const walkDays = (d.days || []).filter(x => !Object.keys(plan.week).map(Number).includes(x));
   await say(user, `Pronto, ${first(user)}! 🎉\n\n${planSummary(S, profile)}` +
+    (walkDays.length ? `\n\n🚶 *Caminhada* · ${listDays(walkDays)}: ${isSenior(profile) || d.level === 'sedentary' ? '10 min' : '20 min'} em ritmo de conversa (dá para falar, não para cantar). Depois me escreva *CAMINHEI 10*.` : '') +
     (senior ? '\n\n👉 Seu plano começa pelo que mais importa agora: *pernas fortes e equilíbrio*. É isso que mantém a independência e previne quedas. Vamos aumentando aos poucos.' : '') +
     (bmi && bmi >= 30 && d.goal === 'fatloss' ? '\n\n👉 Para perder gordura, o treino ajuda muito — mas a alimentação decide. Se puder, procure também um(a) nutricionista.' : ''));
   return say(user, `*Como funciona:* nos dias de treino eu te mando o treino às *${profile.time}*. Depois é só responder *FIZ*. No domingo te mando o resumo da semana. 💚\n\n` +
@@ -260,6 +311,22 @@ async function active(user, msg, t) {
   const wa = user.wa;
 
   if (msg.image && !t) return say(user, 'Recebi a foto! Se quiser atualizar os aparelhos da academia, escreva *REFAZER*.');
+  if (wa.awaitEffort && /^[1-5]$/.test(t)) return rateEffort(user, S, iso, +t);
+  const como = t.match(/^(como|video|vídeo|ver)\s*(\d{1,2})$/);
+  if (como) {
+    const r = effectiveRoutine(S, iso) || S.routines[0];
+    const e = r?.ex[+como[2] - 1];
+    if (!e) return say(user, 'Qual exercício? Escreva *COMO* e o número da lista de hoje, ex.: *COMO 2*.');
+    return sendExercise(user, e.id, exName(e.id, S), S);
+  }
+  const walk = t.match(/^(caminhei|caminhada|andei|corri|pedalei)\s*(\d{1,3})/);
+  if (walk) {
+    const min = +walk[2];
+    S.workouts.push({ id: crypto.randomBytes(8).toString('hex'), d: iso, start: Date.now() - min * 60000, end: Date.now(), name: 'Caminhada', bw: null, entries: [{ id: '3666', sets: [{ min, speed: 0, done: true }], target: { min } }], prs: [], src: 'wa', cardio: true });
+    save(user, S);
+    const wkMin = S.workouts.filter(x => x.cardio && weekKeyOf(x.d) === weekKeyOf(iso)).reduce((a, x) => a + (x.end - x.start) / 60000, 0);
+    return say(user, `Caminhada de *${min} min* anotada! 🚶 Esta semana: *${Math.round(wkMin)} min* de aeróbio (meta: 150).`);
+  }
   if (/^(hoje|treino|treino de hoje)$/.test(t)) {
     const r = effectiveRoutine(S, iso);
     return say(user, r ? dailyMessage(user, S, r) : `Hoje é dia de *descanso* 😌 — o músculo cresce na recuperação. Próximo treino: ${nextTraining(S, iso)}.`);
@@ -298,6 +365,17 @@ function nextTraining(S, iso) {
   return 'nenhum agendado';
 }
 
+// The animation + the first instruction steps for one exercise.
+async function sendExercise(user, id, name, S) {
+  const ex = EX[id];
+  const custom = (S.customEx || []).find(c => c.id === id);
+  const steps = custom?.desc ? custom.desc : (ex ? (D.instructions(id) || []).slice(0, 4).map((x, i) => `${i + 1}. ${x}`).join('\n') : '');
+  if (ex?.gif) return sendGif(user.phone, `${D.origin}/gif/${ex.gif}`, `*${name}*\n${steps}`);
+  return say(user, `*${name}*\n${steps || 'Faça devagar, com controle, e pare se sentir dor.'}`);
+}
+
+const weekKeyOf = iso => { const d = new Date(iso + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7)); return d.toISOString().slice(0, 10); };
+
 async function logWorkout(user, S, iso, raw, t) {
   const r = effectiveRoutine(S, iso) || S.routines.find(x => x.id === S.workouts[S.workouts.length - 1]?.routineId) || S.routines[0];
   if (!r) return say(user, 'Você ainda não tem um plano. Escreva *REFAZER* para montar.');
@@ -312,7 +390,9 @@ async function logWorkout(user, S, iso, raw, t) {
     if (logged) return { id: e.id, sets: logged.sets.map(s => ({ w: s.w, r: s.r, done: true })), target: { reps: e.reps, sets: e.sets } };
     if (e.mode === 'time') return { id: e.id, sets: Array.from({ length: e.sets }, () => ({ sec: e.sec, w: 0, done: true })), target: { sec: e.sec, sets: e.sets } };
     const w = lastWeight(S, e.id);
-    return { id: e.id, sets: Array.from({ length: e.sets }, () => ({ w, r: e.reps, done: true })), target: { reps: e.reps, sets: e.sets } };
+    // No numbers: stored as done but `unknown` — the progression engine will not treat it as
+    // a success, so a plain FIZ never raises the load by itself.
+    return { id: e.id, sets: Array.from({ length: e.sets }, () => ({ w, r: e.reps, done: true })), target: { reps: e.reps, sets: e.sets }, unknown: true };
   });
   const end = Date.now();
   // PRs: heavier than anything logged before for that exercise
@@ -324,14 +404,29 @@ async function logWorkout(user, S, iso, raw, t) {
   S.workouts.push(w);
   entries.forEach(e => { const mx = Math.max(0, ...e.sets.map(s => s.w || 0)); if (mx > 0 && mx > lastWeight(S, e.id)) S.exWeights[e.id] = { w: mx, d: iso }; });
   save(user, S);
-  user.wa.awaitCheckin = false; D.saveDb();
+  user.wa.awaitCheckin = false; user.wa.awaitEffort = w.id; user.wa.safetyShown = true; D.saveDb();
+  return say(user, `Boa, ${first(user)}! 🔥 *${r.name}* anotado.` +
+    (prs.length ? `\n🏆 Recorde em: ${prs.map(id => exName(id, S)).join(', ')}!` : '') +
+    `\n\nDe *1 a 5*, quanto foi difícil?\n*1* muito fácil · *2* fácil · *3* no ponto · *4* difícil · *5* no limite`);
+}
+
+// The effort rating after a session: stored on every entry of that workout, and it is what
+// moves the load when the person logged no numbers (see progression.js).
+async function rateEffort(user, S, iso, n) {
+  const w = S.workouts.find(x => x.id === user.wa.awaitEffort);
+  user.wa.awaitEffort = false;
+  if (!w) { D.saveDb(); return say(user, 'Anotado!'); }
+  w.effort = n; w.entries.forEach(e => { e.effort = n; });
+  save(user, S); D.saveDb();
   const wk = week(S, iso);
   const left = Math.max(0, wk.planned - wk.count);
-  return say(user, `Boa, ${first(user)}! 🔥 *${r.name}* anotado.\n\n` +
-    (prs.length ? `🏆 Recorde em: ${prs.map(id => exName(id, S)).join(', ')}!\n\n` : '') +
-    `Semana: *${wk.count}${wk.planned ? '/' + wk.planned : ''}* treinos${left ? ` — faltam ${left}` : ' — semana completa! 🎉'}.\n` +
-    goalLine(S.profile?.goal, wk, month(S, iso)) +
-    (parsed ? '' : '\n\n_Dica: me mande as cargas (ex.: "supino 3x10 40kg") e eu acompanho sua evolução._'));
+  const senior = isSenior(user.wa.profile || {});
+  const line = n <= 2 ? (senior && (S.workouts.length < 12) ? 'Ótimo. Nas primeiras semanas a meta é ficar no *3*, então subimos só um pouquinho.' : 'Estava fácil: na próxima sessão subo a carga. ⬆️')
+    : n === 3 ? 'No ponto. É exatamente aí que o corpo evolui com segurança.'
+    : n === 4 ? 'Difícil mas feito. Mantemos a carga e ganhamos folga antes de subir.'
+    : 'Foi pesado. Na próxima sessão eu reduzo 10 % — recuar um passo para avançar dois.';
+  return say(user, `${line}\n\nSemana: *${wk.count}${wk.planned ? '/' + wk.planned : ''}* treinos${left ? ` — faltam ${left}` : ' — semana completa! 🎉'}.\n` +
+    goalLine(S.profile?.goal, wk, month(S, iso)));
 }
 
 export function weeklyText(user, S, iso) {
