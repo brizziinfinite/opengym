@@ -51,6 +51,18 @@ const LEVELS = [['sedentary', 'Estou parado(a) há bastante tempo'], ['returning
 const SETUPS = [['gym', 'Na academia'], ['home', 'Em casa, com halteres'], ['bodyweight', 'Sem equipamento, só com o corpo']];
 const opts = list => list.map(([, l], i) => `*${i + 1}* – ${l}`).join('\n');
 
+// Photos go to Gemini downscaled (≤ 768 px, JPEG q60, EXIF and GPS stripped): a fraction of the
+// tokens of a 12 MP shot, and no location data leaves the phone owner's control. Originals are
+// never kept. `sharp` is optional at runtime: without it the original bytes go through.
+async function shrink(media) {
+  try {
+    const { default: sharp } = await import('sharp');
+    const buf = await sharp(Buffer.from(media.base64, 'base64')).rotate()
+      .resize({ width: 768, height: 768, fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 60, mozjpeg: true }).toBuffer();
+    return { base64: buf.toString('base64'), mimetype: 'image/jpeg' };
+  } catch (e) { console.error('[wa] shrink failed, sending original', e.message); return media; }
+}
 const photos = new Map();   // number → [{ base64, mimetype }] while collecting equipment photos
 const queues = new Map();   // number → promise chain (one message at a time per person)
 
@@ -250,7 +262,7 @@ async function onboarding(user, msg, t) {
       const list = photos.get(user.phone) || [];
       if (msg.image) {
         const media = msg.image.inlineBase64 ? { base64: msg.image.inlineBase64, mimetype: msg.image.mimetype } : await mediaOf(msg.image.id).catch(() => null);
-        if (media && list.length < 12) { list.push(media); photos.set(user.phone, list); }
+        if (media && list.length < 12) { list.push(await shrink(media)); photos.set(user.phone, list); }
         return list.length === 1 ? say(user, 'Recebi! Pode mandar mais, e escreva *PRONTO* no final.') : undefined;
       }
       if (/^pular/.test(t)) { photos.delete(user.phone); return next('schedule', scheduleQ()); }
@@ -301,7 +313,7 @@ async function finishOnboarding(user) {
   if (ex) ex.w = d.weightKg; else S.bodyweight.push({ d: iso, w: d.weightKg, t: Date.now(), src: 'wa' });
   S.bodyweight.sort((a, b) => (a.d < b.d ? -1 : 1));
   S.profile = { done: true, sex: d.sex, birthYear: +iso.slice(0, 4) - d.age, heightCm: d.heightCm,
-    goal: d.goal === 'general' ? 'general' : d.goal, experience: d.level === 'regular' ? 'regular' : d.level === 'returning' ? 'returning' : 'new',
+    goal: d.goal === 'general' ? 'general' : d.goal, experience: d.level === 'regular' ? 'regular' : d.level === 'returning' ? 'returning' : 'new', updated: Date.now(),
     daysPerWeek: Object.keys(plan.week).length, preferredDays: Object.keys(plan.week).map(Number), sessionMin: isSenior(profile) ? 30 : 45,
     setup: d.setup, conditions: profile.conditions, via: 'whatsapp' };
   save(user, S);
@@ -365,7 +377,10 @@ async function active(user, msg, t) {
     wa.awaitCheckin = false;
     const tomorrow = addDays(iso, 1);
     const r = effectiveRoutine(S, iso);
-    if (r && !effectiveRoutine(S, tomorrow)) { S.dayPlan[tomorrow] = r.id; save(user, S); D.saveDb(); return say(user, `Tudo bem, acontece! Passei o *${r.name}* para amanhã (${DAY_NAMES[new Date(tomorrow + 'T12:00:00Z').getUTCDay()]}). Mesmo horário. 💪`); }
+    if (r && !effectiveRoutine(S, tomorrow)) {
+      S.dayPlan[tomorrow] = r.id;
+      (S.waDayPlan = S.waDayPlan || {})[tomorrow] = { id: r.id, t: Date.now() };   // survives the web client's next upload
+      save(user, S); D.saveDb(); return say(user, `Tudo bem, acontece! Passei o *${r.name}* para amanhã (${DAY_NAMES[new Date(tomorrow + 'T12:00:00Z').getUTCDay()]}). Mesmo horário. 💪`); }
     D.saveDb(); return say(user, 'Tudo bem, acontece! Amanhã a gente segue. Se sobrar 15 minutos hoje, só os 2 primeiros exercícios já valem. 💪');
   }
   // "fiz" / "1" after the check-in / free-text log

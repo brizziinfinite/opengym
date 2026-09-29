@@ -27,3 +27,6 @@ scripts/.names-pt/
 
 # Local-only Compose overrides (e.g. publishing the web port for testing)
 docker-compose.override.yml
+
+# Daily tar.gz backups written by the backup service
+backups/

@@ -37,6 +37,25 @@ services:
       # API container. This directory is owned by the unprivileged Coach runtime.
       - ./data/codex:/codex
 
+  # Daily backup of ./data (users, plans, workouts, WhatsApp profiles) into ./backups as a
+  # dated tar.gz, keeping the last 30. Copy ./backups off the server (EasyPanel volume backup,
+  # rclone to an S3/Storage Box, …) — a backup on the same disk is only half a backup.
+  backup:
+    image: alpine:3.20
+    restart: unless-stopped
+    volumes:
+      - ./data:/data:ro
+      - ./backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        while true; do
+          f=/backups/levanta-$$(date +%Y%m%d-%H%M).tar.gz
+          tar -czf "$$f" -C / data --exclude='data/codex' && echo "✓ backup $$f"
+          ls -1t /backups/levanta-*.tar.gz 2>/dev/null | tail -n +31 | xargs -r rm -f
+          sleep 86400
+        done
+
   # Builds the React frontend (multi-stage) and serves it, proxying /api → api
   # and the exercise media from the shared volume. Single origin for passkeys.
   web:

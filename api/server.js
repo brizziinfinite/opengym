@@ -422,11 +422,21 @@ const routes = {
     const cur = readState(user.id);
     if (cur && Array.isArray(body.state.workouts)) {
       const since = +body.state._ts || 0;
-      const fresh = (list, key) => (list || []).filter(x => x.src === 'wa' && (x.end || x.t || 0) > since);
+      const fresh = list => (list || []).filter(x => x.src === 'wa' && (x.end || x.t || 0) > since);
       for (const w of fresh(cur.workouts)) if (!body.state.workouts.some(x => x.id === w.id)) body.state.workouts.push(w);
       if (Array.isArray(body.state.bodyweight)) for (const b of fresh(cur.bodyweight)) if (!body.state.bodyweight.some(x => x.d === b.d)) body.state.bodyweight.push(b);
       body.state.workouts.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : (a.start || 0) - (b.start || 0)));
       if (Array.isArray(body.state.bodyweight)) body.state.bodyweight.sort((a, b) => (a.d < b.d ? -1 : 1));
+      // Day overrides the assistant wrote ("moved today's session to tomorrow") are stamped in
+      // cur.waDayPlan with the time they were made; newer than the client's copy → keep them.
+      for (const [iso, v] of Object.entries(cur.waDayPlan || {})) {
+        if (v.t > since) { body.state.dayPlan = body.state.dayPlan || {}; body.state.dayPlan[iso] = v.id; }
+      }
+      body.state.waDayPlan = cur.waDayPlan;
+      // Same for the profile and plan the assistant built: the client never saw them if newer.
+      if (cur.profile?.via === 'whatsapp' && (cur.profile.updated || 0) > since) {
+        body.state.profile = cur.profile; body.state.routines = cur.routines; body.state.week = cur.week; body.state.customEx = cur.customEx;
+      }
     }
     atomicWrite(stateFile(user.id), JSON.stringify(body.state));
     json(res, 200, { ok: true, ts: body.state._ts || null });
