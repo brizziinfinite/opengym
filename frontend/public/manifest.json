@@ -1,7 +1,7 @@
 {
-  "name": "openGym",
-  "short_name": "openGym",
-  "description": "Personal gym & body weight tracker",
+  "name": "Levanta",
+  "short_name": "Levanta",
+  "description": "Seu treino, pelo WhatsApp.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

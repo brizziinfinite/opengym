@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Levanta: a person rising, arms up — read at a glance as an upward arrow. -->
+  <rect width="512" height="512" rx="112" fill="#0c0e12"/>
+  <circle cx="256" cy="128" r="44" fill="#30d158"/>
+  <path d="M128 352 L256 224 L384 352" fill="none" stroke="#30d158" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M256 236 L256 404" fill="none" stroke="#30d158" stroke-width="64" stroke-linecap="round"/>
+</svg>
