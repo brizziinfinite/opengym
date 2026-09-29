@@ -24,7 +24,10 @@ Check it's healthy:
 
 ```bash
 docker compose ps
-curl http://localhost:8080/api/health      # {"ok":true,...}
+# with the docker-compose.override.yml publishing 8080:80 (see the README's Quick start):
+curl http://localhost:8080/api/health                      # {"ok":true,...}
+# without the override (e.g. on EasyPanel) — ask from inside the web container:
+docker compose exec web wget -qO- localhost/api/health     # {"ok":true,...}
 ```
 
 Logs: `docker compose logs -f`. Stop: `docker compose down`.
@@ -47,12 +50,22 @@ passkey prompt won't appear. To use openGym from your phone you need a real HTTP
 Put openGym behind something that terminates TLS for a hostname you control, then point it at
 the `web` container. Pick whichever you already run:
 
+> **Proxy on the same Docker network** (EasyPanel, Traefik, Caddy running in a container): point it
+> straight at `web:80`. No override and no published port needed — the `:8080` steps below are
+> only for a proxy running on the host itself.
+
 ### Option A — Cloudflare Tunnel (no open ports)
+
+> Requires a `docker-compose.override.yml` publishing the port (`"8080:80"`) — see the
+> [README → Quick start](../README.md#quick-start-self-host). Without it nothing listens on `:8080`.
 
 1. Create a tunnel and route `gym.example.com` → `http://<docker-host>:8080`.
 2. Cloudflare gives you HTTPS automatically.
 
 ### Option B — Caddy (automatic Let's Encrypt)
+
+> Requires a `docker-compose.override.yml` publishing the port (`"8080:80"`) — see the
+> [README → Quick start](../README.md#quick-start-self-host). Without it nothing listens on `:8080`.
 
 ```caddy
 gym.example.com {
