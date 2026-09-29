@@ -20,7 +20,10 @@ export const DEF = {
   // AI Coach (issue: AI enablement). null until the profile opts in — a null namespace is the
   // same app it was before the feature existed, which is what Epic F asks for. Shape and
   // bounds live in lib/coach.js.
-  coach: null
+  coach: null,
+  // Onboarding answers (views/Welcome.jsx): sex, birthYear, heightCm, goal, experience,
+  // daysPerWeek, preferredDays, sessionMin, setup, done. { skipped: true } when dismissed.
+  profile: null
 }
 const clone = o => JSON.parse(JSON.stringify(o))
 

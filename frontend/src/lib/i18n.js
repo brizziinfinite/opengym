@@ -63,8 +63,10 @@ export const nameOf = ex => (ex && names && !ex.custom && names[ex.id]) || (ex &
 const PT_LOWER = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'na', 'no', 'em', 'a', 'o'])
 export function titleCase(s) {
   if (lang !== 'pt' || typeof s !== 'string') return s
-  return s.split(' ').map((w, i) => i > 0 && PT_LOWER.has(w.toLowerCase())
-    ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+  // Only a connective already written in lower case stays lower: "Membros inferiores A" keeps
+  // its routine letter, it is not the article "a".
+  return s.split(' ').map((w, i) => i > 0 && PT_LOWER.has(w)
+    ? w : w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
 }
 // True while exercise names come from a names pack — those are already cased for display.
 export const namesLocalized = () => !!names

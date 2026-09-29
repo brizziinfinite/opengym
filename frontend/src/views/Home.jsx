@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, setsDoneActive } from '../lib/history.js'
@@ -13,6 +13,7 @@ import { coachAvailable, hasConsent } from '../lib/coach.js'
 import { useCoachStatus } from '../lib/coach-api.js'
 import { DEMO } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
+import ProgressCards, { TodayHint } from '../components/Progress.jsx'
 
 // A job in flight or a proposal waiting is the only reason the Coach interrupts Home. When it
 // has nothing to say it renders nothing at all — and it only polls while Home is on screen.
@@ -47,6 +48,9 @@ export default function Home() {
   const config = useStore(s => s.config)
   const [weekOffset, setWeekOffset] = useState(0)
   const coachOn = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE })
+  // First run: nothing planned, nothing logged, never answered the profile → ask it first.
+  const fresh = !S.profile && !S.routines.length && !S.workouts.length && !S.active
+  useEffect(() => { if (fresh && !DEMO) nav('/welcome', { replace: true }) }, [fresh, nav])
 
   const today = new Date()
   const routine = effectiveRoutine(S, todayISO())
@@ -103,9 +107,25 @@ export default function Home() {
           : routine ? <span className="tag acc">{titleCase(t('Start'))}</span>
           : <Icon name="plus" className="chev" />}
       </div>
+      <TodayHint />
     </div>
 
     {coachOn && <CoachCard nav={nav} />}
+
+    {!S.profile?.done && (S.routines.length > 0 || S.workouts.length > 0) && (
+      <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => nav('/welcome?edit=1')}>
+        <div className="row" style={{ gap: 10 }}>
+          <span className="lrow-i" style={{ background: 'var(--acc)' }}><Icon name="person" /></span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 600 }}>{t('Complete your profile')}</div>
+            <div className="muted small">{t('Age, height and goal — so the app can show what each workout is doing for you.')}</div>
+          </div>
+          <Icon name="chevronRight" className="chev" />
+        </div>
+      </div>
+    )}
+
+    <ProgressCards />
 
     {!S.routines.length && !S.active && (
       <div className="card">
@@ -114,11 +134,13 @@ export default function Home() {
           <div className="big" style={{ fontSize: 22 }}>{t('Welcome!')}</div>
         </div>
         <div className="muted small" style={{ marginBottom: 12 }}>{t('Set up your weekly routine to get going — or load a ready-made Push / Pull / Legs plan.')}</div>
+        <Button variant="primary" icon="sparkles" onClick={() => nav('/welcome')}>{t('Create my plan')}</Button>
+        <div style={{ height: 8 }} />
         {coachOn && <>
-          <Button variant="primary" icon="sparkles" onClick={() => nav(hasConsent(S) ? '/coach/intake' : '/coach')}>{t('Let the Coach build it')}</Button>
+          <Button icon="sparkles" onClick={() => nav(hasConsent(S) ? '/coach/intake' : '/coach')}>{t('Let the Coach build it')}</Button>
           <div style={{ height: 8 }} />
         </>}
-        <Button variant={coachOn ? 'plain' : 'primary'} icon="sparkles" onClick={loadStarterPlan}>{t('Load starter plan (PPL)')}</Button>
+        <Button onClick={loadStarterPlan}>{t('Load starter plan (PPL)')}</Button>
         <div style={{ height: 8 }} /><Button onClick={() => nav('/plan')}>{t('Build my own plan')}</Button>
       </div>
     )}

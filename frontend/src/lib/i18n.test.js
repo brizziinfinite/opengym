@@ -13,6 +13,7 @@ describe('titleCase', () => {
     expect(titleCase('dia de descanso')).toBe('Dia de Descanso')
     expect(titleCase('Treino de Pernas')).toBe('Treino de Pernas')
     expect(titleCase('de pé com a barra e o banco na mão')).toBe('De Pé com a Barra e o Banco na Mão')
+    expect(titleCase('Membros inferiores A')).toBe('Membros Inferiores A')
     await setLang('en')
   })
 })

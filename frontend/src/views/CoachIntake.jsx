@@ -54,6 +54,12 @@ export default function CoachIntake() {
   const [p, setP] = useState(() => ({
     goal: null, experience: null, daysPerWeek: 3, preferredDays: [1, 3, 5],
     sessionMin: 45, equipment: [], limitations: '', likes: '', dislikes: '', notes: '',
+    // answers already given in the app's own profile (Welcome) carry over
+    ...(S.profile?.done ? {
+      goal: S.profile.goal, experience: S.profile.experience, daysPerWeek: S.profile.daysPerWeek,
+      sessionMin: S.profile.sessionMin,
+      ...(S.profile.preferredDays?.length ? { preferredDays: S.profile.preferredDays } : {})
+    } : {}),
     ...(S.coach?.profile || {})
   }))
   const set = patch => setP(v => ({ ...v, ...patch }))

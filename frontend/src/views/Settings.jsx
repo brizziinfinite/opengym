@@ -103,6 +103,9 @@ export default function Settings() {
 
     {/* ---------- general ---------- */}
     <Section title={t('General')} footer={t('Note: switching units only changes the label — logged numbers are not converted.')}>
+      <Row icon="person" iconTint="var(--acc)" title={t('My profile')}
+        subtitle={S.profile?.done ? t('Goal, body and training days') : t('Not set yet')}
+        accessory="chevron" onClick={() => nav('/welcome?edit=1')} />
       <SelectRow
         icon="globe" iconTint="var(--blue)" title={t('Language')}
         value={S.lang || 'en'} onChange={v => update(s => { s.lang = v })}
