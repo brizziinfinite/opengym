@@ -29,7 +29,7 @@ No account on someone else's server, no subscription, no ads. Just `docker compo
 
 > ### 🤖 This is a fork — it adds the AI Coach
 >
-> A fork of [DuarteSantos8/openGym](https://github.com/DuarteSantos8/openGym) that adds one
+> A fork of openGym that adds one
 > optional feature: an AI that **designs** your training plan and **revises it from what you
 > actually log**, running on your own server under your own provider account.
 >
