@@ -28,37 +28,42 @@ export const CUSTOM = {
 };
 
 // Candidates per movement slot, best first. The first one whose equipment the user has wins.
+// Two candidate lists per slot: `pro` for people who already train (free weights first) and
+// `easy` for beginners, returners and seniors (machines and supported variations first, then
+// dumbbells, then bodyweight). The first candidate the user's equipment allows wins.
 const SLOTS = {
-  sitstand: ['cx-sitstand'],
-  balance: ['cx-balance'],
-  squat: ['0043', '1760', '3132'],            // barbell squat · goblet squat · supported squat
-  squatSafe: ['0739', '0431', '3013'],        // knee/back friendly: leg press · step-up · glute bridge
-  hinge: ['0085', '1459', '3013'],            // romanian deadlift (barbell/dumbbell) · glute bridge
-  hingeSafe: ['0586', '3013'],                // lying leg curl · glute bridge
-  legs2: ['0739', '0336', '1460'],            // leg press · dumbbell lunge · walking lunge
-  legs2Safe: ['0739', '0431', '3013'],
-  legcurl: ['0586', '0431', '2368'],
-  legext: ['0585'],
-  calf: ['0605', '0417', '1373'],
-  hpush: ['0025', '0577', '0289', '0662'],    // bench press · chest press machine · dumbbell bench · push-up
-  hpushEasy: ['0577', '0289', '0493'],        // chest press machine · dumbbell bench · incline push-up
-  ipush: ['0314', '0493'],
-  vpush: ['0426', '0405'],
-  hpull: ['0861', '0292', '0499'],            // cable row · one-arm dumbbell row · inverted row
-  vpull: ['2330', '0375', '1326'],            // lat pulldown · dumbbell pullover · chin-up
-  lateral: ['0334'],
-  rear: ['0383'],
-  biceps: ['0031', '0294'],
-  triceps: ['0201', '0430', '0129'],
-  core: ['0274'],
-  core2: ['0472', '0276'],
-  coreSafe: ['0276']                          // dead bug: no spinal flexion under load
+  sitstand: { easy: ['cx-sitstand'] },
+  balance: { easy: ['cx-balance'] },
+  squat: { pro: ['0043', '1760', '0291'], easy: ['0739', '1760', '0291', '2803'] },          // barbell squat · goblet · bench squat | leg press · goblet · bench squat · supported
+  squatSafe: { pro: ['0739', '0431', '3013'], easy: ['0739', '0431', '0291', '3013'] },        // knee/back friendly: leg press · step-up · bench squat · glute bridge
+  hinge: { pro: ['0085', '1459', '3013'], easy: ['0599', '1459', '3013'] },                  // romanian deadlift | seated leg curl · dumbbell RDL · glute bridge
+  hingeSafe: { pro: ['0599', '3013'], easy: ['0599', '3013', '1422'] },                        // seated leg curl · glute bridge · pelvic tilt bridge
+  legs2: { pro: ['0739', '0336', '0431'], easy: ['0739', '0431', '2368'] },                  // leg press · lunge · step-up | leg press · step-up · split squat
+  legs2Safe: { pro: ['0739', '0431', '3013'], easy: ['0739', '0431', '3013'] },
+  legcurl: { pro: ['0599', '0586', '0431'], easy: ['0599', '0431', '2368'] },                 // seated leg curl first (prone is awkward past 65)
+  legext: { pro: ['0585'], easy: ['0585'] },
+  hipabd: { easy: ['0597', '0710'] },                                                          // hip abduction (machine / bodyweight) — hip stability for seniors
+  calf: { pro: ['0605', '0417', '1373'], easy: ['0605', '0417', '1373'] },
+  hpush: { pro: ['0025', '0289', '0662'], easy: ['0577', '0289', '0493'] },                  // bench press · dumbbell bench · push-up | chest press machine · dumbbell bench · incline push-up
+  hpushEasy: { easy: ['0577', '0289', '0493'] },
+  ipush: { pro: ['0314', '0493'], easy: ['0314', '0493'] },
+  vpush: { pro: ['0426', '0405'], easy: ['0603', '0405'] },                                  // standing OHP · seated DB press | shoulder press machine · seated DB press
+  hpull: { pro: ['0861', '0292', '0499'], easy: ['1350', '0861', '0327', '3144', '0988'] },  // cable row · 1-arm DB row · inverted row | seated row machine · cable row · chest-supported DB row · band rows
+  vpull: { pro: ['2330', '0375', '1326'], easy: ['2330', '1431', '0375', '0974', '3116'] },  // lat pulldown · pullover · chin-up | lat pulldown · assisted chin-up · pullover · band pulldowns
+  carry: { easy: ['2133'] },                                                                   // farmer's walk — grip + gait
+  lateral: { pro: ['0334'], easy: ['0334'] },
+  rear: { pro: ['0383'], easy: ['0383'] },
+  biceps: { pro: ['0031', '0294'], easy: ['0294'] },
+  triceps: { pro: ['0201', '0430'], easy: ['0201', '0430'] },                                // no bench dips: shoulder-unfriendly
+  core: { pro: ['0274', '0276'], easy: ['0276', '0979'] },                                   // crunch | dead bug · Pallof press
+  core2: { pro: ['0472', '0276'], easy: ['0979', '0276'] },
+  coreSafe: { pro: ['0276', '0979'], easy: ['0276', '0979'] }                                // no loaded spinal flexion
 };
 const COMPOUND = new Set(['squat', 'squatSafe', 'hinge', 'hingeSafe', 'legs2', 'legs2Safe', 'hpush', 'hpushEasy', 'ipush', 'vpush', 'hpull', 'vpull', 'sitstand']);
 
 const R = {
-  seniorA: ['Força e equilíbrio A', 'legs', ['sitstand', 'legs2Safe', 'hpushEasy', 'hpull', 'balance', 'calf', 'coreSafe']],
-  seniorB: ['Força e equilíbrio B', 'legs', ['squatSafe', 'hpull', 'hingeSafe', 'hpushEasy', 'balance', 'calf', 'coreSafe']],
+  seniorA: ['Força e equilíbrio A', 'legs', ['sitstand', 'legs2Safe', 'hpushEasy', 'hpull', 'balance', 'carry', 'calf', 'coreSafe']],
+  seniorB: ['Força e equilíbrio B', 'legs', ['squatSafe', 'hpull', 'hingeSafe', 'hpushEasy', 'balance', 'hipabd', 'calf', 'coreSafe']],
   fullA: ['Corpo inteiro A', 'figureStrength', ['squat', 'hpush', 'hpull', 'hinge', 'vpush', 'core', 'calf', 'lateral']],
   fullB: ['Corpo inteiro B', 'figureStrength', ['hinge', 'vpull', 'legs2', 'ipush', 'hpull', 'core2', 'calf', 'biceps']],
   fullC: ['Corpo inteiro C', 'figureStrength', ['legs2', 'ipush', 'hpull', 'legcurl', 'rear', 'core', 'calf']],
@@ -124,19 +129,30 @@ export function doseFor(p, compound) {
   return { sets, reps: 15, repsMin: 10, prog: 'double' };
 }
 
-// Slot substitutions for conditions.
+// Slot substitutions for conditions (a slot can end up removed: null).
 function slotFor(slot, cond) {
-  if (cond.includes('knee')) {
+  if (cond.includes('knee') || cond.includes('hip')) {
     if (slot === 'squat') return 'squatSafe';
     if (slot === 'legs2') return 'legs2Safe';
   }
-  if (cond.includes('back')) {
+  if (cond.includes('back') || cond.includes('osteoporosis')) {
     if (slot === 'squat') return 'squatSafe';
     if (slot === 'hinge') return 'hingeSafe';
     if (slot === 'core' || slot === 'core2') return 'coreSafe';
   }
+  if (cond.includes('shoulder') && (slot === 'vpush' || slot === 'ipush')) return null;
   return slot;
 }
+// Exercise ids never given to a condition, whatever the slot.
+const BANNED = {
+  knee: ['0043', '1460', '2368', '0336', '0053', '0514'],            // deep loaded squats, lunges, jumps
+  hip: ['3132', '2803', '0710', '0597', '1460'],                     // deep flexion, adduction/abduction, lunges (prosthesis)
+  back: ['0032', '0085', '0043', '0274', '0472', '0027'],             // heavy hinges, loaded flexion
+  osteoporosis: ['0274', '0472', '0211', '0849', '0850'],             // spinal flexion / rotation under load
+  shoulder: ['0426', '0129', '0025', '1326'],                         // overhead barbell, dips, barbell bench, chin-ups
+  obesity: ['1460', '0514', '0513', '1160', '0630', '0662', '0274'],  // impact, floor-based
+  vertigo: ['0274', '3013', '1422', '0276']                           // fast down-and-up from the floor
+};
 
 /**
  * profile: { age, sex, level: 'sedentary'|'returning'|'regular', goal, setup, equipment?,
@@ -144,9 +160,13 @@ function slotFor(slot, cond) {
  * returns { routines, week, customEx }
  */
 export function buildPlan(p) {
-  const cond = p.conditions || [];
+  const cond = [...(p.conditions || [])];
+  if (p.bmi >= 35 && !cond.includes('obesity')) cond.push('obesity');
+  const banned = new Set(cond.flatMap(c => BANNED[c] || []));
   const allowed = allowedEquipment(p);
+  const tier = isSenior(p) || p.level !== 'regular' ? 'easy' : 'pro';
   const has = id => {
+    if (banned.has(id)) return false;
     if (id.startsWith('cx-')) return true;
     const e = EX[id];
     return !!e && (!allowed || allowed.has(e.eq));
@@ -163,13 +183,16 @@ export function buildPlan(p) {
       for (const s0 of slots) {
         if (ex.length >= per) break;
         const s = slotFor(s0, cond);
-        const id = (SLOTS[s] || []).find(c => has(c) && !ex.some(e => e.id === c));
+        if (!s) continue;
+        const cands = SLOTS[s] ? (SLOTS[s][tier] || SLOTS[s].easy || SLOTS[s].pro || []) : [];
+        const id = cands.find(c => has(c) && !ex.some(e => e.id === c));
         if (!id) continue;
         const d = doseFor(p, COMPOUND.has(s));
         const entry = { id, sets: d.sets, reps: d.reps, weight: 0,
           ...(d.repsMin ? { repsMin: d.repsMin } : {}),
           ...(d.prog !== routineProg ? { prog: d.prog } : {}) };
         if (id === 'cx-balance') { delete entry.reps; delete entry.repsMin; Object.assign(entry, { mode: 'time', sec: 20, prog: 'time' }); }
+        if (id === '2133') { delete entry.reps; delete entry.repsMin; Object.assign(entry, { mode: 'time', sec: 30, prog: 'time' }); }
         const c = Object.values(CUSTOM).find(x => x.id === id);
         if (c && !customEx.some(x => x.id === id)) customEx.push({ ...c, tg: '', eq: 'custom', custom: true });
         ex.push(entry);

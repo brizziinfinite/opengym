@@ -38,7 +38,14 @@ const PARQ = [
   'Você toma remédio para pressão ou para o coração?',
   'Existe algum outro motivo para você não fazer atividade física?'
 ];
-const CONDITIONS = [['hypertension', 'Pressão alta'], ['diabetes', 'Diabetes'], ['knee', 'Dor no joelho'], ['back', 'Dor na coluna/lombar'], ['pregnant', 'Estou grávida']];
+const CONDITIONS = [
+  ['hypertension', 'Pressão alta'], ['diabetes', 'Diabetes'], ['knee', 'Dor no joelho'], ['back', 'Dor na coluna/lombar'],
+  ['shoulder', 'Dor no ombro'], ['osteoporosis', 'Osteoporose/osteopenia'], ['hip', 'Prótese de quadril'], ['vertigo', 'Labirintite/tontura frequente'],
+  ['recent', 'Cirurgia, fratura ou infarto nos últimos 6 meses'], ['cancer', 'Câncer em tratamento'], ['pregnant', 'Estou grávida']
+];
+// Conditions that need a doctor's ok before any plan (ACSM 2015: metabolic/cardiac/renal disease
+// in someone not already training; recent events; active treatment).
+const NEEDS_CLEARANCE = ['diabetes', 'recent', 'cancer'];
 const GOALS = [['fatloss', 'Perder gordura'], ['muscle', 'Ganhar massa muscular'], ['strength', 'Ficar mais forte'], ['general', 'Saúde e disposição']];
 const LEVELS = [['sedentary', 'Estou parado(a) há bastante tempo'], ['returning', 'Estou voltando depois de uma pausa'], ['regular', 'Já treino com regularidade']];
 const SETUPS = [['gym', 'Na academia'], ['home', 'Em casa, com halteres'], ['bodyweight', 'Sem equipamento, só com o corpo']];
@@ -205,12 +212,18 @@ async function onboarding(user, msg, t) {
     case 'conditions': {
       d.conditions = numbers(t, CONDITIONS.length).map(n => CONDITIONS[n - 1][0]);
       if (d.conditions.includes('pregnant')) return next('waiting_clearance', 'Parabéns pela gestação! 💚 Na gravidez o treino precisa ser prescrito por um profissional que acompanhe você de perto, junto com o obstetra — não é algo que eu deva montar sozinho. Depois do pós-parto liberado, me escreva *LIBERADO* e seguimos.');
+      if (!d.clearance && d.conditions.some(c => NEEDS_CLEARANCE.includes(c))) return next('clearance2', 'Obrigado por contar. Com essa condição, o padrão de segurança é ter o *ok do médico* antes de começar.\n\n*1* – Já tenho liberação, pode seguir\n*2* – Vou falar com o médico antes (me chame com *LIBERADO*)');
       return next('body', 'Agora me conte numa mensagem só: *idade, sexo, altura e peso*.\nEx.: _52, feminino, 1,62, 70kg_');
+    }
+    case 'clearance2': {
+      if (isYes(t) || /liberad/.test(t)) { d.clearance = true; d.clearanceAt = new Date().toISOString(); return next('body', 'Agora me conte numa mensagem só: *idade, sexo, altura e peso*.\nEx.: _52, feminino, 1,62, 70kg_'); }
+      if (isNo(t)) return next('waiting_clearance', 'Combinado! Quando o médico liberar, me escreva *LIBERADO* e eu monto seu plano. Estou aqui. 💚');
+      return say(user, 'Responda *1* se já tem liberação ou *2* para falar com o médico antes.');
     }
     case 'body': {
       Object.assign(d, Object.fromEntries(Object.entries(parseBody(msg.text)).filter(([, v]) => v != null)));
       const miss = [!d.age && 'idade', !d.sex && 'sexo', !d.heightCm && 'altura', !d.weightKg && 'peso'].filter(Boolean);
-      if (d.age && (d.age < 14 || d.age > 100)) { delete d.age; miss.unshift('idade'); }
+      if (d.age && (d.age < 18 || d.age > 100)) { delete d.age; if (d.age !== undefined || true) { D.saveDb(); return say(user, 'Por enquanto o Levanta é para maiores de 18 anos (menores precisam do consentimento dos responsáveis, que ainda não consigo registrar por aqui).'); } }
       if (miss.length) { D.saveDb(); return say(user, `Faltou: *${miss.join(', ')}*. Pode me mandar?`); }
       return next('goal', `Anotado! Qual é o seu *objetivo* principal?\n${opts(GOALS)}`);
     }
@@ -273,7 +286,8 @@ const scheduleQ = () => 'Quase lá! Quais *dias e horário* você pode treinar?\
 
 async function finishOnboarding(user) {
   const d = user.wa.draft;
-  const profile = { age: d.age, sex: d.sex, heightCm: d.heightCm, goal: d.goal, level: d.level, setup: d.setup, equipment: d.equipment || null,
+  const bmi0 = d.heightCm ? d.weightKg / Math.pow(d.heightCm / 100, 2) : null;
+  const profile = { age: d.age, sex: d.sex, heightCm: d.heightCm, bmi: bmi0 ? Math.round(bmi0 * 10) / 10 : null, goal: d.goal, level: d.level, setup: d.setup, equipment: d.equipment || null,
     days: d.days, time: d.time, cue: d.cue || null, conditions: d.conditions || [], parq: d.parq || [], clearance: !!d.clearance };
   const plan = buildPlan(profile);
   const S = load(user);
