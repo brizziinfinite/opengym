@@ -782,4 +782,12 @@ export default {
   'about {0} min': 'लगभग {0} मिनट',
   '{0} more workout than last month.': 'पिछले महीने से {0} वर्कआउट ज़्यादा।',
   '{0} fewer workout than last month — this week is a good time to catch up.': 'पिछले महीने से {0} वर्कआउट कम — इस सप्ताह बराबरी करने का अच्छा मौका है।',
+
+  /* ---- profile, automatic plan, progress ---- */
+  'Functional tests': 'कार्यात्मक परीक्षण',
+  'monthly': 'मासिक',
+  'Sit-to-stand in 30 s': '30 सेकंड में बैठना-उठना',
+  'Single-leg stance': 'एक पैर पर संतुलन',
+  'reps': 'बार',
+  'Asked by the assistant on WhatsApp every 4 weeks — the numbers that show what got easier in daily life.': 'सहायक हर 4 हफ़्ते में WhatsApp पर पूछता है — ये संख्याएँ बताती हैं कि रोज़मर्रा में क्या आसान हुआ।',
 }

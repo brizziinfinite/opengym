@@ -164,6 +164,7 @@ async function handle(msg) {
   }
   const t = norm(msg.text);
   const wa = user.wa || (user.wa = { step: 'active', tz: TZ });
+  wa.lastInbound = new Date().toISOString();
 
   if (RED_FLAGS.test(t) && !/^liberad/.test(t)) {
     wa.redFlagAt = new Date().toISOString(); wa.paused = true; wa.awaitEffort = false; wa.awaitCheckin = false;
@@ -338,6 +339,7 @@ async function active(user, msg, t) {
 
   if (msg.image && !t) return say(user, 'Recebi a foto! Se quiser atualizar os aparelhos da academia, escreva *REFAZER*.');
   if (wa.awaitEffort && /^[1-5]$/.test(t)) return rateEffort(user, S, iso, +t);
+  if (wa.awaitTest && /^\d{1,3}$/.test(t)) return recordTest(user, S, iso, +t);
   const como = t.match(/^(como|video|vídeo|ver)\s*(\d{1,2})$/);
   if (como) {
     const r = effectiveRoutine(S, iso) || S.routines[0];
@@ -439,6 +441,25 @@ async function logWorkout(user, S, iso, raw, t) {
     `\n\nDe *1 a 5*, quanto foi difícil?\n*1* muito fácil · *2* fácil · *3* no ponto · *4* difícil · *5* no limite`);
 }
 
+// Monthly functional tests (30-s sit-to-stand, then single-leg stance in seconds). Stored in
+// S.tests so the web app can chart them; the reply compares with the previous month.
+async function recordTest(user, S, iso, n) {
+  const kind = user.wa.awaitTest;
+  S.tests = S.tests || [];
+  const prev = [...S.tests].reverse().find(x => x.kind === kind);
+  S.tests.push({ kind, d: iso, v: n, src: 'wa' });
+  save(user, S);
+  if (kind === 'sitstand') {
+    user.wa.awaitTest = 'balance'; D.saveDb();
+    const cmp = prev ? (n > prev.v ? ` No mês passado foram *${prev.v}* — você ficou mais forte. 💪` : n === prev.v ? ` Igual ao mês passado: mantendo.` : ` No mês passado foram *${prev.v}* — vamos recuperar.`) : '';
+    const ref = user.wa.profile?.age >= 60 ? (user.wa.profile?.sex === 'female' ? 12 : 14) : 15;
+    return say(user, `*${n}* vezes.${cmp}${n < ref ? ` A referência para sua idade é em torno de ${ref}; o plano de pernas é justamente para chegar lá.` : ' Acima da referência para sua idade!'}\n\nAgora o equilíbrio: fique em *um pé só* (perto de um apoio) e conte quantos *segundos* aguenta. Me responda o número.`);
+  }
+  user.wa.awaitTest = false; D.saveDb();
+  const cmp = prev ? (n > prev.v ? ` Mês passado: *${prev.v} s*. Seu equilíbrio está melhorando — isso é o que previne quedas.` : ` Mês passado: *${prev.v} s*.`) : '';
+  return say(user, `*${n} segundos*.${cmp}${n < 10 ? ' Abaixo de 10 s o risco de queda é maior: por isso o equilíbrio está em todos os seus treinos.' : n >= 30 ? ' Excelente. Vamos dificultar: sem apoio e, depois, de olhos fechados.' : ' Bom. Vamos seguir subindo.'}\n\nObrigado! Esses dois números dizem mais sobre sua saúde do que a balança.`);
+}
+
 // The effort rating after a session: stored on every entry of that workout, and it is what
 // moves the load when the person logged no numbers (see progression.js).
 async function rateEffort(user, S, iso, n) {
@@ -458,11 +479,22 @@ async function rateEffort(user, S, iso, n) {
     goalLine(S.profile?.goal, wk, month(S, iso)));
 }
 
+// Consecutive weeks (ending this week) with at least 2 sessions — rest days never break it.
+export function weekStreak(S, iso) {
+  const counts = {};
+  (S.workouts || []).forEach(w => { const k = weekKeyOf(w.d); counts[k] = (counts[k] || 0) + 1; });
+  let n = 0, k = weekKeyOf(iso);
+  while ((counts[k] || 0) >= 2) { n++; k = addDays(k, -7); }
+  return n;
+}
+
 export function weeklyText(user, S, iso) {
   const w = week(S, iso), m = month(S, iso);
   const diff = w.prev.count ? w.count - w.prev.count : null;
+  const streak = weekStreak(S, iso);
   return `📊 *Sua semana, ${first(user)}*\n\n` +
     `Treinos: *${w.count}${w.planned ? '/' + w.planned : ''}*${diff != null && diff !== 0 ? ` (${diff > 0 ? '+' : ''}${diff} vs semana passada)` : ''}\n` +
+    (streak >= 2 ? `🔥 *${streak} semanas* seguidas treinando${[4, 8, 12, 26, 52].includes(streak) ? ' — marco de ' + streak + ' semanas! Isso já é um hábito.' : '.'}\n` : '') +
     `Séries: *${w.sets}* · Tempo: *${w.minutes} min*` + (w.kcal ? ` · ≈ *${w.kcal} kcal*` : '') + (w.prs ? `\n🏆 Recordes: *${w.prs}*` : '') +
     `\n\n${goalLine(S.profile?.goal, w, m)}\n\n` +
     (w.count >= w.planned && w.planned ? 'Semana completa. Isso é consistência — e é ela que traz resultado. 💚' : w.count ? 'Cada treino conta. Semana que vem a gente fecha tudo! 💪' : 'Semana difícil acontece. Amanhã é um novo começo — até 15 minutos já fazem diferença. 💚');

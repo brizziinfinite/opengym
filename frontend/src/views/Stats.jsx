@@ -227,6 +227,19 @@ export default function Stats() {
         <div className="chart"><LineChart points={bwPts} h={160} unit={S.unit} goal={S.targetW} /></div>
       </div>
 
+      {(S.tests || []).length > 0 && <div className="card">
+        <h2>{t('Functional tests')} <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>· {t('monthly')}</span></h2>
+        {[['sitstand', t('Sit-to-stand in 30 s'), t('reps')], ['balance', t('Single-leg stance'), 's']].map(([kind, label, unit]) => {
+          const pts = (S.tests || []).filter(x => x.kind === kind).map(x => ({ t: Date.parse(x.d), y: x.v, d: x.d }))
+          if (!pts.length) return null
+          return <div key={kind} style={{ marginTop: 8 }}>
+            <div className="small muted">{label}</div>
+            <div className="chart"><LineChart points={pts} h={120} unit={unit} /></div>
+          </div>
+        })}
+        <div className="small dim" style={{ marginTop: 8 }}>{t('Asked by the assistant on WhatsApp every 4 weeks — the numbers that show what got easier in daily life.')}</div>
+      </div>}
+
       <div className="card">
         <h2>{t('Exercise progress')}</h2>
         {exHist.length ? <>

@@ -7,6 +7,7 @@
 import { sendText } from './evolution.js';
 import { dailyMessage, weeklyText, monthlyText, TZ } from './flow.js';
 import { addDays } from './progress.js';
+import { isSenior } from './plan.js';
 
 const minutes = hhmm => { const [h, m] = String(hhmm || '').split(':').map(Number); return h * 60 + m; };
 const inWindow = (now, target, span = 120) => { const n = minutes(now), t = minutes(target); return n >= t && n < t + span; };
@@ -24,8 +25,16 @@ export function startScheduler({ db, saveDb, readState, userNow }) {
         const time = wa.profile?.time || '07:00';
         const doneToday = (S.workouts || []).some(w => w.d === now.date);
         const out = [];
+        // Two weeks without a word from them: stop the daily messages, keep one "door open"
+        // note a week (Sunday's summary slot) — nagging is how people block a number.
+        const silentDays = wa.lastInbound ? (Date.parse(now.date) - Date.parse(wa.lastInbound.slice(0, 10))) / 86400000 : 0;
+        const quiet = silentDays >= 14;
+        if (quiet && now.weekday === 0 && wa.lastWeekly !== now.date && inWindow(now.hhmm, '19:00')) {
+          wa.lastWeekly = now.date;
+          out.push(`Oi, ${(user.name || '').split(' ')[0]}. Sem cobrança: seu plano continua aqui quando você quiser voltar. Um treino de 15 minutos já reabre o caminho. Responda *HOJE* quando estiver pronto(a). 💚`);
+        }
 
-        if (!wa.paused) {
+        if (!wa.paused && !quiet) {
           const ov = S.dayPlan?.[now.date];
           const rid = ov === 'rest' ? null : (ov && S.routines?.some(r => r.id === ov) ? ov : S.week?.[now.weekday]);
           const r = rid ? (S.routines || []).find(x => x.id === rid) : null;
@@ -39,11 +48,16 @@ export function startScheduler({ db, saveDb, readState, userNow }) {
             out.push('Conseguiu treinar hoje? 💪\n*1* – Sim, fiz!\n*2* – Não deu hoje');
           }
         }
-        if (now.weekday === 0 && wa.lastWeekly !== now.date && inWindow(now.hhmm, '19:00') && (S.workouts || []).length) {
+        if (!quiet && now.weekday === 0 && wa.lastWeekly !== now.date && inWindow(now.hhmm, '19:00') && (S.workouts || []).length) {
           wa.lastWeekly = now.date; out.push(weeklyText(user, S, now.date));
         }
-        if (now.date.endsWith('-01') && wa.lastMonthly !== now.date && inWindow(now.hhmm, '09:00') && (S.workouts || []).length) {
+        if (!quiet && now.date.endsWith('-01') && wa.lastMonthly !== now.date && inWindow(now.hhmm, '09:00') && (S.workouts || []).length) {
           wa.lastMonthly = now.date; out.push(monthlyText(user, S, addDays(now.date, -1)));
+          // Functional test every 4 weeks: the numbers that show what got easier in daily life.
+          if (isSenior(wa.profile || {}) || wa.profile?.level === 'sedentary') {
+            wa.awaitTest = 'sitstand';
+            out.push('📏 *Teste do mês* (leva 1 minuto): sente-se numa cadeira firme, braços cruzados no peito. Em *30 segundos*, quantas vezes você consegue levantar e sentar? Me responda só o número.');
+          }
         }
         if (out.length) {
           saveDb();   // before sending: a crash mid-send must not repeat the message

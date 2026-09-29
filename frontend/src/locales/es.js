@@ -782,4 +782,12 @@ export default {
   'about {0} min': 'unos {0} min',
   '{0} more workout than last month.': '{0} entreno más que el mes pasado.',
   '{0} fewer workout than last month — this week is a good time to catch up.': '{0} entreno menos que el mes pasado — esta semana es buen momento para ponerte al día.',
+
+  /* ---- profile, automatic plan, progress ---- */
+  'Functional tests': 'Pruebas funcionales',
+  'monthly': 'mensual',
+  'Sit-to-stand in 30 s': 'Sentarse y levantarse en 30 s',
+  'Single-leg stance': 'Equilibrio a una pierna',
+  'reps': 'reps',
+  'Asked by the assistant on WhatsApp every 4 weeks — the numbers that show what got easier in daily life.': 'El asistente las pide por WhatsApp cada 4 semanas: los números que muestran qué se volvió más fácil en el día a día.',
 }

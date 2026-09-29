@@ -782,4 +782,12 @@ export default {
   'about {0} min': 'yaklaşık {0} dk',
   '{0} more workout than last month.': 'Geçen aydan {0} antrenman fazla.',
   '{0} fewer workout than last month — this week is a good time to catch up.': 'Geçen aydan {0} antrenman az — bu hafta açığı kapatmak için iyi bir zaman.',
+
+  /* ---- profile, automatic plan, progress ---- */
+  'Functional tests': 'Fonksiyonel testler',
+  'monthly': 'aylık',
+  'Sit-to-stand in 30 s': '30 sn’de otur-kalk',
+  'Single-leg stance': 'Tek ayak üstünde durma',
+  'reps': 'tekrar',
+  'Asked by the assistant on WhatsApp every 4 weeks — the numbers that show what got easier in daily life.': 'Asistan her 4 haftada bir WhatsApp’tan sorar — günlük hayatta nelerin kolaylaştığını gösteren sayılar.',
 }

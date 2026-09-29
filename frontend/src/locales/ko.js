@@ -782,4 +782,12 @@ export default {
   'about {0} min': '약 {0}분',
   '{0} more workout than last month.': '지난달보다 운동 {0}회 더 했어요.',
   '{0} fewer workout than last month — this week is a good time to catch up.': '지난달보다 운동 {0}회 적어요 — 이번 주에 따라잡기 좋은 때예요.',
+
+  /* ---- profile, automatic plan, progress ---- */
+  'Functional tests': '기능 테스트',
+  'monthly': '매월',
+  'Sit-to-stand in 30 s': '30초 앉았다 일어서기',
+  'Single-leg stance': '한 발 서기',
+  'reps': '회',
+  'Asked by the assistant on WhatsApp every 4 weeks — the numbers that show what got easier in daily life.': '어시스턴트가 4주마다 WhatsApp으로 물어봐요 — 일상에서 무엇이 쉬워졌는지 보여 주는 숫자예요.',
 }

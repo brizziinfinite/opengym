@@ -782,4 +782,12 @@ export default {
   'about {0} min': '约 {0} 分钟',
   '{0} more workout than last month.': '比上个月多 {0} 次训练。',
   '{0} fewer workout than last month — this week is a good time to catch up.': '比上个月少 {0} 次训练——这周正是追上的好时机。',
+
+  /* ---- profile, automatic plan, progress ---- */
+  'Functional tests': '功能测试',
+  'monthly': '每月',
+  'Sit-to-stand in 30 s': '30 秒坐站次数',
+  'Single-leg stance': '单腿站立',
+  'reps': '次',
+  'Asked by the assistant on WhatsApp every 4 weeks — the numbers that show what got easier in daily life.': '助手每 4 周在 WhatsApp 上询问一次——这些数字显示日常生活中哪些事变轻松了。',
 }

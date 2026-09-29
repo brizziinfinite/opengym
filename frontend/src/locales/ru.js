@@ -782,4 +782,12 @@ export default {
   'about {0} min': 'около {0} мин',
   '{0} more workout than last month.': '+{0} тренировка к прошлому месяцу.',
   '{0} fewer workout than last month — this week is a good time to catch up.': '−{0} тренировка к прошлому месяцу — на этой неделе самое время наверстать.',
+
+  /* ---- profile, automatic plan, progress ---- */
+  'Functional tests': 'Функциональные тесты',
+  'monthly': 'ежемесячно',
+  'Sit-to-stand in 30 s': 'Встать со стула за 30 с',
+  'Single-leg stance': 'Стойка на одной ноге',
+  'reps': 'повт.',
+  'Asked by the assistant on WhatsApp every 4 weeks — the numbers that show what got easier in daily life.': 'Ассистент спрашивает в WhatsApp каждые 4 недели — цифры, которые показывают, что стало легче в быту.',
 }
