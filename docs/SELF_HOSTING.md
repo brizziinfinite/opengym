@@ -8,17 +8,18 @@ This guide takes you from "just cloned it" to "using it from my phone over the i
 Requirements: [Docker](https://docs.docker.com/get-docker/) with the Compose plugin.
 
 ```bash
-git clone https://github.com/DuarteSantos8/gym-app opengym
+git clone https://github.com/brizziinfinite/opengym
 cd opengym
 cp .env.example .env
-docker compose pull   # prebuilt images from ghcr.io (amd64 + arm64) — or skip and build from source
-docker compose up -d
+docker compose up -d --build
 ```
 
-- First start downloads the exercise images/GIFs (~140 MB) once into `app/img` and `app/gif`.
-- Open **http://localhost:8080** and create a profile with a passkey.
-- Rather build from source than pull prebuilt images? Skip `docker compose pull` and run
-  `docker compose up -d --build` instead — no Node needed locally either way.
+- The images are always built from this repository — no Node or build step needed locally.
+- First start downloads the exercise images/GIFs (~140 MB) once into `media/img` and `media/gif`.
+- The `web` container only exposes port 80 to the Docker network. To open it from this machine,
+  add a `docker-compose.override.yml` publishing `"8080:80"` (see the
+  [README → Quick start](../README.md#quick-start-self-host)), then open **http://localhost:8080**
+  and create a profile with a passkey.
 
 Check it's healthy:
 
@@ -39,7 +40,7 @@ openGym signs you in with **passkeys** (WebAuthn). Browsers enforce two rules:
 1. Passkeys are bound to an exact **hostname** (`RP_ID`).
 2. They only work over **HTTPS** — with one exception: `http://localhost`.
 
-So `http://localhost:8080` works on the machine running Docker, but **another device (your
+So `http://localhost:8080` (published by the override) works on the machine running Docker, but **another device (your
 phone) cannot use `http://<your-LAN-ip>:8080`** — that's neither localhost nor HTTPS, so the
 passkey prompt won't appear. To use openGym from your phone you need a real HTTPS hostname.
 
@@ -75,7 +76,8 @@ gym.example.com {
 
 ### Option C — Traefik / nginx / Nginx Proxy Manager
 
-Route `gym.example.com` (HTTPS) → `web:80` (or `<docker-host>:8080`). Any reverse proxy works —
+Route `gym.example.com` (HTTPS) → `web:80` (or `<docker-host>:8080` if the proxy runs on the host
+and your `docker-compose.override.yml` publishes the port). Any reverse proxy works —
 openGym only needs the browser to reach it over `https://gym.example.com`.
 
 Then set your domain in `.env` and restart:
@@ -149,20 +151,12 @@ refuses the lock while the phone is in Low Power Mode.
 
 ## 7. Updating
 
-Running prebuilt images:
-
-```bash
-git pull                    # picks up compose/config changes
-docker compose pull
-docker compose up -d
-```
-
-Building from source instead:
-
 ```bash
 git pull
 docker compose up -d --build
 ```
+
+On EasyPanel, redeploy the service (Deploy) after pushing to the branch it tracks.
 
 The app shell is versioned (`?v=N`) so clients pick up changes on next load. Your `./data` and the
 downloaded media are untouched.
@@ -252,4 +246,3 @@ act on it.
 | No "Notifications" option in Settings | Requires a signed-in profile and HTTPS (or `localhost`) — guest mode and plain HTTP over LAN can't subscribe. |
 | Day reminder fires at the wrong time | Toggle it off and on in Settings so it re-detects your browser's timezone (also happens automatically on every app load — see section 6). |
 | Want to reset a stuck login | Delete the cookie in your browser; sessions are just signed cookies. |
-| `docker compose pull` fails with "denied" / "unauthorized" | The prebuilt images aren't published yet, or need to be, or the GHCR package is still private — build from source instead (`docker compose up -d --build`). |

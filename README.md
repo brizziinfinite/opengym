@@ -19,9 +19,9 @@ No account on someone else's server, no subscription, no ads. Just `docker compo
 ![Docker](https://img.shields.io/badge/Docker-compose-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![No tracking](https://img.shields.io/badge/telemetry-none-f472b6?style=flat-square)
 <br>
-![GitHub last commit](https://img.shields.io/github/last-commit/DuarteSantos8/openGym?style=flat-square)
-[![GitHub stars](https://img.shields.io/github/stars/DuarteSantos8/openGym?style=flat-square)](https://github.com/DuarteSantos8/openGym/stargazers)
-[![GitHub issues](https://img.shields.io/github/issues/DuarteSantos8/openGym?style=flat-square)](https://github.com/DuarteSantos8/openGym/issues)
+![GitHub last commit](https://img.shields.io/github/last-commit/brizziinfinite/opengym?style=flat-square)
+[![GitHub stars](https://img.shields.io/github/stars/brizziinfinite/opengym?style=flat-square)](https://github.com/brizziinfinite/opengym/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/brizziinfinite/opengym?style=flat-square)](https://github.com/brizziinfinite/opengym/issues)
 
 </div>
 
@@ -177,7 +177,7 @@ All via `.env` (see `.env.example`):
 | Variable      | What it is                                           | Default                 |
 |---------------|------------------------------------------------------|-------------------------|
 | `RP_ID`       | Hostname passkeys are bound to                       | `localhost`             |
-| `ORIGIN`      | Full URL the app is served from                      | `http://localhost:8080` |
+| `ORIGIN`      | Full URL the app is served from (locally: the port your `docker-compose.override.yml` publishes) | `http://localhost:8080` |
 | `RP_NAME`     | Name shown in the passkey prompt                     | `openGym`               |
 | `ADMIN_UIDS`  | User ids that get the admin dashboard (comma-separated) | *(none)*             |
 | `INVITE_ONLY` | Require an invite code to create a profile           | *(off)*                 |
@@ -221,15 +221,8 @@ React, the router and Zustand.
 
 ## Community
 
-- **[Q&A](https://github.com/DuarteSantos8/openGym/discussions/categories/q-a)** — self-hosting
-  help, passkey/login trouble, "how do I…". Most login problems turn out to be an `RP_ID`/`ORIGIN`
-  mismatch.
-- **[Ideas](https://github.com/DuarteSantos8/openGym/discussions/categories/ideas)** — features
-  worth talking through before anyone writes code.
-- **[Show and tell](https://github.com/DuarteSantos8/openGym/discussions/categories/show-and-tell)**
-  — your setup, your plan templates, whatever you built on top.
-- **[Issues](https://github.com/DuarteSantos8/openGym/issues)** — bugs, and work that's already
-  been agreed on.
+- **[Issues](https://github.com/brizziinfinite/opengym/issues)** — bugs, self-hosting help, passkey/login trouble and feature ideas.
+  Most login problems turn out to be an `RP_ID`/`ORIGIN` mismatch.
 
 ## Contributing
 
