@@ -16,6 +16,7 @@ import { startCadence } from './coach/cadence.js';
 import { parseWebhook } from './wa/evolution.js';
 import { initFlow, handleIncoming } from './wa/flow.js';
 import { startScheduler } from './wa/scheduler.js';
+import * as pgdb from './db/pg.js';
 
 const PORT = +(process.env.PORT || 3000);
 const DATA = process.env.DATA_DIR || '/data';
@@ -53,7 +54,29 @@ try { db = JSON.parse(fs.readFileSync(dbFile, 'utf8')); } catch {}
 db.subs = db.subs || [];
 db.invites = db.invites || [];
 const isAdmin = user => !!user && (user.admin === true || ADMIN_UIDS.includes(user.id));
-function saveDb() { atomicWrite(dbFile, JSON.stringify(db, null, 2)); }
+// With DATABASE_URL set, Postgres is the source of truth for this data and db.json becomes a
+// migration source (read once when the database is empty) plus a nightly fallback copy.
+// Writes are serialised so two saveDb() calls never interleave their transactions.
+let pgReady = false, pgChain = Promise.resolve();
+function saveDb() {
+  if (!pgReady) { atomicWrite(dbFile, JSON.stringify(db, null, 2)); return; }
+  pgChain = pgChain.then(() => pgdb.save(db)).catch(e => console.error('[pg] save failed', e.message));
+}
+if (pgdb.enabled()) {
+  await pgdb.connect();
+  const loaded = await pgdb.load();
+  if (!loaded.users.length && db.users.length) {
+    console.log(`[pg] empty database — migrating ${db.users.length} users from db.json`);
+    await pgdb.save(db);
+    fs.renameSync(dbFile, dbFile + '.migrated-' + Date.now());
+  } else {
+    db = loaded;
+    pgdb.prime(db);
+  }
+  pgReady = true;
+  setInterval(() => { atomicWrite(dbFile + '.pg-copy', JSON.stringify(db)); pgdb.prune(); }, 6 * 3600000).unref();
+  console.log(`[pg] connected — ${db.users.length} users`);
+}
 function atomicWrite(file, content) {
   const tmp = file + '.tmp';
   fs.writeFileSync(tmp, content);
@@ -653,7 +676,8 @@ const usedLinks = new Set();
 const magicLink = user => ORIGIN.replace(/\/+$/, '') + '/api/wa/login?t=' + encodeURIComponent(sign('wa:' + user.id + ':' + (Date.now() + 15 * 60000)));
 const WA_INSTR = (() => { try { return JSON.parse(fs.readFileSync(new URL('./wa/instructions.json', import.meta.url), 'utf8')); } catch { return {}; } })();
 initFlow({ db: { get users() { return db.users; }, set users(v) { db.users = v; } }, saveDb, readState, writeState, userNow, magicLink, deleteUser,
-  origin: ORIGIN.replace(/\/+$/, ''), instructions: id => WA_INSTR[id] });
+  origin: ORIGIN.replace(/\/+$/, ''), instructions: id => WA_INSTR[id],
+  log: { message: pgdb.logMessage, event: pgdb.logEvent, consent: pgdb.logConsent, summary: pgdb.upsertSummary } });
 startScheduler({ db: { get users() { return db.users; } }, saveDb, readState, userNow });
 
 http.createServer(async (req, res) => {

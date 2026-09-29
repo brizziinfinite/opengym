@@ -264,6 +264,24 @@ Things to know before opening it to the public:
   confirms medical clearance; pregnancy is referred to a professional. Having a CREF-registered
   professional review the plan templates in `api/wa/plan.js` is recommended.
 
+## 10. Database (Postgres)
+
+Out of the box everything lives in `./data` as JSON files, which is fine for a family instance.
+With the WhatsApp assistant on, use the `db` service (Postgres 16) in `docker-compose.yml`:
+
+1. Set `POSTGRES_PASSWORD` and `DATABASE_URL=postgres://levanta:<password>@db:5432/levanta` in `.env`.
+2. Redeploy. On the first boot with a database the api migrates `./data/db.json` into it
+   (users, passkeys, push subscriptions, invites) and renames the file to `db.json.migrated-<ts>`.
+
+What moves to Postgres: users and their WhatsApp conversation state, the chat log (kept 90
+days), events such as workouts logged and effort ratings (2 years), consents, and a compact
+per-user summary for the trainer layer. Each person's plan, workouts and weigh-ins stay in
+`./data/state-<uid>.json` for now — the web app syncs that file whole and is unchanged.
+
+Backups: the `backup` service writes a daily `pg_dump` next to the `./data` tarball in
+`./backups`. The database files themselves are in `./data/postgres` — never copy those while
+Postgres is running; use the dump.
+
 ## Troubleshooting
 
 | Symptom | Fix |

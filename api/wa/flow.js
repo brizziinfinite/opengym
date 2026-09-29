@@ -89,7 +89,8 @@ function effectiveRoutine(S, iso) {
 const lastWeight = (S, id) => S.exWeights?.[id]?.w || 0;
 
 /* ---------------- messages ---------------- */
-const say = (user, text) => sendText(user.phone, text);
+const say = (user, text) => { D.log?.message(user.id, user.phone, 'out', 'text', text); return sendText(user.phone, text); };
+const ev = (user, type, payload) => D.log?.event(user.id, type, payload);
 
 const kg = v => String(round1(v)).replace('.', ',') + ' kg';
 const round1 = v => Math.round(v * 10) / 10;
@@ -165,9 +166,11 @@ async function handle(msg) {
   const t = norm(msg.text);
   const wa = user.wa || (user.wa = { step: 'active', tz: TZ });
   wa.lastInbound = new Date().toISOString();
+  D.log?.message(user.id, user.phone, 'in', msg.image ? 'image' : 'text', msg.text);
 
   if (RED_FLAGS.test(t) && !/^liberad/.test(t)) {
     wa.redFlagAt = new Date().toISOString(); wa.paused = true; wa.awaitEffort = false; wa.awaitCheckin = false;
+    ev(user, 'red_flag', { text: msg.text.slice(0, 200) });
     if (wa.step === 'active') wa.step = 'paused_health';
     D.saveDb();
     return say(user, RED_FLAG_REPLY);
@@ -204,6 +207,7 @@ async function onboarding(user, msg, t) {
       if (isNo(t)) return say(user, 'Sem problemas! Quando quiser começar, é só responder *1*.');
       if (!isYes(t)) return say(user, 'Responda *1* para começar ou *2* para deixar para depois.');
       wa.consentAt = new Date().toISOString();
+      D.log?.consent(user.id, 'health-data-for-training-plan', { channel: 'whatsapp', text: 'consentiu ao responder 1 à mensagem de abertura' });
       return next('parq', '*Triagem de saúde* (PAR-Q)\nResponda com os *números* das perguntas em que a resposta é *sim* (ex.: _2 5_), ou *0* se nenhuma:\n\n' +
         PARQ.map((q, i) => `*${i + 1}.* ${q}`).join('\n'));
 
@@ -377,6 +381,7 @@ async function active(user, msg, t) {
   }
   if (wa.awaitCheckin && (t === '2' || /^nao/.test(t))) {
     wa.awaitCheckin = false;
+    ev(user, 'checkin_no', {});
     const tomorrow = addDays(iso, 1);
     const r = effectiveRoutine(S, iso);
     if (r && !effectiveRoutine(S, tomorrow)) {
@@ -436,6 +441,8 @@ async function logWorkout(user, S, iso, raw, t) {
   entries.forEach(e => { const mx = Math.max(0, ...e.sets.map(s => s.w || 0)); if (mx > 0 && mx > lastWeight(S, e.id)) S.exWeights[e.id] = { w: mx, d: iso }; });
   save(user, S);
   user.wa.awaitCheckin = false; user.wa.awaitEffort = w.id; user.wa.safetyShown = true; D.saveDb();
+  ev(user, 'workout_logged', { routine: r.name, detailed: !!parsed, prs: prs.length });
+  D.log?.summary(user.id, buildSummary(user, S, iso));
   return say(user, `Boa, ${first(user)}! 🔥 *${r.name}* anotado.` +
     (prs.length ? `\n🏆 Recorde em: ${prs.map(id => exName(id, S)).join(', ')}!` : '') +
     `\n\nDe *1 a 5*, quanto foi difícil?\n*1* muito fácil · *2* fácil · *3* no ponto · *4* difícil · *5* no limite`);
@@ -468,6 +475,7 @@ async function rateEffort(user, S, iso, n) {
   if (!w) { D.saveDb(); return say(user, 'Anotado!'); }
   w.effort = n; w.entries.forEach(e => { e.effort = n; });
   save(user, S); D.saveDb();
+  ev(user, 'effort', { workout: w.id, effort: n });
   const wk = week(S, iso);
   const left = Math.max(0, wk.planned - wk.count);
   const senior = isSenior(user.wa.profile || {});
@@ -507,6 +515,26 @@ export function monthlyText(user, S, iso) {
   if (m.topGain) lines.push(`Maior ganho de força: *${EX[m.topGain.id]?.pt || 'exercício'}* +${String(m.topGain.gain).replace('.', ',')} kg (1RM estimado)`);
   lines.push('', m.count >= m.prev.count ? 'Você está evoluindo. Continue no ritmo! 🚀' : 'Mês que vem é a chance de voltar ao ritmo. Estou aqui. 💚');
   return lines.join('\n');
+}
+
+/* ---------------- the compact summary the trainer layer reads ---------------- */
+// ~1–2 KB per user: profile, adherence, the last sessions and flags — never the raw state.
+export function buildSummary(user, S, iso) {
+  const p = user.wa?.profile || {};
+  const w = week(S, iso), m = month(S, iso);
+  const recent = (S.workouts || []).slice(-5).map(x => ({
+    d: x.d, routine: x.name, effort: x.effort ?? null, cardio: !!x.cardio,
+    top: (x.entries || []).filter(e => !x.cardio).map(e => { const best = e.sets.reduce((a, s) => (s.w > (a?.w || 0) ? s : a), null); return best ? `${exName(e.id, S)} ${best.w}×${best.r}` : null; }).filter(Boolean).slice(0, 3)
+  }));
+  const bw = S.bodyweight || [];
+  return {
+    profile: { age: p.age, sex: p.sex, goal: p.goal, level: p.level, setup: p.setup, days: p.days, time: p.time, conditions: p.conditions, cue: p.cue },
+    adherence: { planned_week: w.planned, done_week: w.count, done_month: m.count, streak_weeks: weekStreak(S, iso), last_workout: (S.workouts || []).map(x => x.d).sort().pop() || null },
+    recent,
+    trends: { bodyweight_now: bw.length ? bw[bw.length - 1].w : null, bodyweight_month_delta: m.bwChange, top_gain: m.topGain ? { ex: exName(m.topGain.id, S), kg: m.topGain.gain } : null },
+    tests: (S.tests || []).slice(-4),
+    flags: { paused: !!user.wa?.paused, red_flag_at: user.wa?.redFlagAt || null, quiet: false }
+  };
 }
 
 /* ---------------- reschedule (reuses the parsers) ---------------- */

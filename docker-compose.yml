@@ -31,18 +31,40 @@ services:
       - PORT=3000            # internal port (nginx proxies here) — do not change
       - DATA_DIR=/data
       - COACH_CODEX_HOME=/codex
+    depends_on:
+      db:
+        condition: service_healthy
     volumes:
       - ./data:/data         # users, passkeys, per-user state, session secret — BACK THIS UP
       # ChatGPT/Codex refresh tokens are kept separate from app data and mounted only into the
       # API container. This directory is owned by the unprivileged Coach runtime.
       - ./data/codex:/codex
 
+  # Postgres for users, WhatsApp profiles, chat log, events and consents (docs/SELF_HOSTING.md §10).
+  # Per-user plans/workouts stay as JSON files in ./data for now. Set DATABASE_URL in .env to
+  # postgres://levanta:${POSTGRES_PASSWORD}@db:5432/levanta and the api migrates db.json on first boot.
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=levanta
+      - POSTGRES_USER=levanta
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-levanta}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U levanta -d levanta"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   # Daily backup of ./data (users, plans, workouts, WhatsApp profiles) into ./backups as a
   # dated tar.gz, keeping the last 30. Copy ./backups off the server (EasyPanel volume backup,
   # rclone to an S3/Storage Box, …) — a backup on the same disk is only half a backup.
   backup:
-    image: alpine:3.20
+    image: postgres:16-alpine     # alpine + pg_dump
     restart: unless-stopped
+    env_file: .env
     volumes:
       - ./data:/data:ro
       - ./backups:/backups
@@ -51,8 +73,9 @@ services:
       - |
         while true; do
           f=/backups/levanta-$$(date +%Y%m%d-%H%M).tar.gz
-          tar -czf "$$f" -C / data --exclude='data/codex' && echo "✓ backup $$f"
-          ls -1t /backups/levanta-*.tar.gz 2>/dev/null | tail -n +31 | xargs -r rm -f
+          tar -czf "$$f" -C / data --exclude='data/codex' --exclude='data/postgres' && echo "✓ backup $$f"
+          [ -n "$$DATABASE_URL" ] && pg_dump "$$DATABASE_URL" | gzip > "$${f%.tar.gz}.sql.gz" && echo "✓ pg_dump"
+          ls -1t /backups/levanta-*.tar.gz /backups/levanta-*.sql.gz 2>/dev/null | tail -n +61 | xargs -r rm -f
           sleep 86400
         done
 
