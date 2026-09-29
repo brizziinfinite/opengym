@@ -13,6 +13,9 @@ import * as coachConfig from './coach/config.js';
 import * as coachJobs from './coach/jobs.js';
 import { coachRoutes } from './coach/routes.js';
 import { startCadence } from './coach/cadence.js';
+import { parseWebhook } from './wa/evolution.js';
+import { initFlow, handleIncoming } from './wa/flow.js';
+import { startScheduler } from './wa/scheduler.js';
 
 const PORT = +(process.env.PORT || 3000);
 const DATA = process.env.DATA_DIR || '/data';
@@ -59,6 +62,15 @@ function atomicWrite(file, content) {
 const stateFile = uid => path.join(DATA, 'state-' + uid.replace(/[^a-zA-Z0-9_-]/g, '') + '.json');
 function readState(uid) {
   try { return JSON.parse(fs.readFileSync(stateFile(uid), 'utf8')); } catch { return null; }
+}
+function writeState(uid, S) { atomicWrite(stateFile(uid), JSON.stringify(S)); }
+// Removes a user and everything stored for them (LGPD: the WhatsApp "APAGAR" command).
+function deleteUser(uid) {
+  db.users = db.users.filter(u => u.id !== uid);
+  db.creds = db.creds.filter(c => c.userId !== uid);
+  db.subs = db.subs.filter(s => s.userId !== uid);
+  saveDb();
+  try { fs.unlinkSync(stateFile(uid)); } catch { /* never had state */ }
 }
 
 /* ---------- push notifications (Web Push / VAPID) ---------- */
@@ -405,6 +417,17 @@ const routes = {
     const body = await readBody(req);
     if (!body.state || typeof body.state !== 'object') return json(res, 400, { error: 'state required' });
     delete body.state.active;              // in-progress workouts stay device-local
+    // The web client uploads its whole state. Anything the WhatsApp assistant logged after the
+    // client's last change (it could not have seen it) is carried over instead of overwritten.
+    const cur = readState(user.id);
+    if (cur && Array.isArray(body.state.workouts)) {
+      const since = +body.state._ts || 0;
+      const fresh = (list, key) => (list || []).filter(x => x.src === 'wa' && (x.end || x.t || 0) > since);
+      for (const w of fresh(cur.workouts)) if (!body.state.workouts.some(x => x.id === w.id)) body.state.workouts.push(w);
+      if (Array.isArray(body.state.bodyweight)) for (const b of fresh(cur.bodyweight)) if (!body.state.bodyweight.some(x => x.d === b.d)) body.state.bodyweight.push(b);
+      body.state.workouts.sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : (a.start || 0) - (b.start || 0)));
+      if (Array.isArray(body.state.bodyweight)) body.state.bodyweight.sort((a, b) => (a.d < b.d ? -1 : 1));
+    }
     atomicWrite(stateFile(user.id), JSON.stringify(body.state));
     json(res, 200, { ok: true, ts: body.state._ts || null });
   },
@@ -558,6 +581,38 @@ const routes = {
     json(res, 200, { ok: true });
   },
 
+  /* ---------- Levanta: WhatsApp (Evolution API webhook) ---------- */
+  // Evolution posts every event here. The shared token in the URL is what stops anyone else
+  // from talking as your users; set WA_WEBHOOK_TOKEN and configure the webhook as
+  // <ORIGIN>/api/wa/webhook?token=<WA_WEBHOOK_TOKEN>. Answers 200 at once — the reply goes out
+  // through the Evolution API, not in this response.
+  'POST /api/wa/webhook': async (req, res) => {
+    const token = new URL(req.url, 'http://x').searchParams.get('token') || '';
+    const expect = process.env.WA_WEBHOOK_TOKEN || '';
+    if (!expect || token.length !== expect.length || !crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expect)))
+      return json(res, 403, { error: 'forbidden' });
+    const body = await readBody(req);
+    json(res, 200, { ok: true });
+    const msg = parseWebhook(body);
+    if (!msg || (!msg.text && !msg.image)) return;
+    if (seenMsg.has(msg.msgId)) return;          // Evolution retries on slow answers
+    seenMsg.add(msg.msgId); if (seenMsg.size > 5000) seenMsg.clear();
+    handleIncoming(msg);
+  },
+
+  // One-time sign-in link sent by the assistant ("LINK"): WhatsApp users have no passkey.
+  'GET /api/wa/login': async (req, res) => {
+    const tok = new URL(req.url, 'http://x').searchParams.get('t') || '';
+    const payload = verifySig(tok);
+    const [kind, uid, exp] = (payload || '').split(':');
+    const user = kind === 'wa' && +exp > Date.now() && !usedLinks.has(tok) ? db.users.find(u => u.id === uid && !u.disabled) : null;
+    if (!user) { res.writeHead(302, { Location: '/' }); return res.end(); }
+    usedLinks.add(tok);                           // single use: a forwarded link is dead after the first tap
+    if (usedLinks.size > 2000) usedLinks.clear();
+    res.writeHead(302, { Location: '/#/home', 'Set-Cookie': sessionCookie(user), 'Cache-Control': 'no-store' });
+    res.end();
+  },
+
   /* ---------- AI Coach ---------- */
   // Routes live in coach/routes.js and are handed the helpers above rather than importing
   // them: they are closures over db and SECRET, and passing them in keeps that module free of
@@ -581,6 +636,13 @@ coachJobs.setProposalHook((uid, pending) => {
   });
 });
 startCadence({ users: () => db.users, userNow });
+
+/* ---------- Levanta: WhatsApp assistant ---------- */
+const seenMsg = new Set();
+const usedLinks = new Set();
+const magicLink = user => ORIGIN.replace(/\/+$/, '') + '/api/wa/login?t=' + encodeURIComponent(sign('wa:' + user.id + ':' + (Date.now() + 15 * 60000)));
+initFlow({ db: { get users() { return db.users; }, set users(v) { db.users = v; } }, saveDb, readState, writeState, userNow, magicLink, deleteUser });
+startScheduler({ db: { get users() { return db.users; } }, saveDb, readState, userNow });
 
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');

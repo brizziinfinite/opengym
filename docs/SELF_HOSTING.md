@@ -235,6 +235,35 @@ connecting anything that costs money.
 Users never see the provider's own error text — that goes to the admin card, where someone can
 act on it.
 
+## 9. Levanta on WhatsApp (optional)
+
+Levanta can run entirely over WhatsApp: people message your number, answer a short onboarding
+(consent, PAR-Q health screening, conditions, body data, goal, level, where they train — with
+photos of the gym equipment — and their days and time), and get a plan built for them. From then
+on the assistant comes to them: today's workout at their time with why it matters, a check-in
+three hours later, a Sunday summary and a monthly one. They answer `FIZ`, a free-text log
+(`supino 3x10 40kg`), `PESO 82,5`, or `AJUDA` for the rest. `LINK` sends a one-time sign-in link
+to the web app, where the same plan, workouts and charts are.
+
+1. Run an [Evolution API](https://doc.evolution-api.com) instance connected to your WhatsApp number.
+2. Set `EVOLUTION_URL`, `EVOLUTION_INSTANCE`, `EVOLUTION_APIKEY`, `WA_WEBHOOK_TOKEN` and
+   `GEMINI_API_KEY` in `.env` (see `.env.example`) and redeploy.
+3. In Evolution, point the instance webhook at `https://<your domain>/api/wa/webhook?token=<WA_WEBHOOK_TOKEN>`
+   with the `MESSAGES_UPSERT` event and "Webhook base64" on.
+4. Send "oi" to the number.
+
+Things to know before opening it to the public:
+
+- **Evolution API is unofficial.** WhatsApp can ban numbers that many people report as spam.
+  Only message people who wrote first (the assistant never starts a conversation), and plan a
+  move to the official WhatsApp Cloud API as you grow — only `api/wa/evolution.js` changes.
+- **Health data (LGPD art. 11).** The assistant asks for explicit consent first, and `APAGAR`
+  deletes the user and all their data. Publish a privacy notice that says what is stored and why.
+- **Exercise prescription (Lei 9.696/98).** Plans are general guidance built from WHO/ACSM
+  recommendations, and the assistant says so. A PAR-Q "yes" pauses the plan until the person
+  confirms medical clearance; pregnancy is referred to a professional. Having a CREF-registered
+  professional review the plan templates in `api/wa/plan.js` is recommended.
+
 ## Troubleshooting
 
 | Symptom | Fix |
