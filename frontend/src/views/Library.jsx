@@ -3,7 +3,7 @@ import { useStore } from '../store/useStore.js'
 import { EXDB, BODYPARTS, allExercises, equipmentOf } from '../lib/exercises.js'
 import { bestWeightFor } from '../lib/history.js'
 import { fmtNum } from '../lib/format.js'
-import { t, nameOf } from '../lib/i18n.js'
+import { t, nameOf, titleCase } from '../lib/i18n.js'
 import { Thumb } from '../components/Media.jsx'
 import { exerciseDetailSheet, addToRoutineSheet, customExSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
@@ -28,11 +28,11 @@ export default function Library() {
       <input className="input" placeholder={t('Search…')} value={q} onChange={e => { setQ(e.target.value); setShown(40) }} /></div>
     <div className="chips" style={{ marginBottom: eqOpts.length > 1 ? 8 : 12 }}>
       <button className={'chip nocap' + (!bp ? ' on' : '')} onClick={() => { setBp(''); setEq(''); setShown(40) }}>{t('All')}</button>
-      {BODYPARTS.map(b => <button key={b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => { setBp(b); setEq(''); setShown(40) }}>{t(b)}</button>)}
+      {BODYPARTS.map(b => <button key={b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => { setBp(b); setEq(''); setShown(40) }}>{titleCase(t(b))}</button>)}
     </div>
     {eqOpts.length > 1 && <div className="chips" style={{ marginBottom: 12 }}>
       <button className={'chip nocap' + (!eqOn ? ' on' : '')} onClick={() => { setEq(''); setShown(40) }}>{t('Any equipment')}</button>
-      {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(40) }}>{t(x)}</button>)}
+      {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(40) }}>{titleCase(t(x))}</button>)}
     </div>}
     <div className="list">
       <div className="item" onClick={() => customExSheet(null, ex => exerciseDetailSheet(ex), q.trim())}>

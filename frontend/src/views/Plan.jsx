@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { DAYN, uid, exCount } from '../lib/format.js'
-import { t } from '../lib/i18n.js'
+import { t, titleCase } from '../lib/i18n.js'
 import { dayAssignSheet, loadStarterPlan, planToolsSheet } from '../sheets.jsx'
 import Icon from '../components/Icon.jsx'
 import { Button } from '../components/ui.jsx'
@@ -37,7 +37,7 @@ export default function Plan() {
           const r = S.routines.find(x => x.id === S.week[d])
           return <div key={d} className="item" onClick={() => dayAssignSheet(d)}>
             <div className="grow"><div className="tt">{t(DAYN[d])}</div></div>
-            {r ? <span className="tag acc"><Icon name={glyphOf(r.emoji)} />{r.name}</span> : <span className="tag">{t('Rest')}</span>}
+            {r ? <span className="tag acc"><Icon name={glyphOf(r.emoji)} />{titleCase(r.name)}</span> : <span className="tag">{titleCase(t('Rest'))}</span>}
             <Icon name="chevronRight" className="chev" /></div>
         })}
       </div>

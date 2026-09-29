@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useStore, DEF } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { t } from '../lib/i18n.js'
+import { t, titleCase } from '../lib/i18n.js'
 import { fmtDate } from '../lib/format.js'
 import { DEMO } from '../lib/demo.js'
 import { MOBILE } from '../lib/mobile.js'
@@ -222,7 +222,7 @@ function StatusCard({ job, pending, nav }) {
             : t(pending.changes?.length === 1 ? '{0} suggestion' : '{0} suggestions', pending.changes?.length || 0)}</div>
         </div>
       </div>
-      <span className="tag acc">{t('Review')}</span>
+      <span className="tag acc">{titleCase(t('Review'))}</span>
     </div>
   </div>
 
@@ -288,7 +288,7 @@ function LogCard({ coach }) {
         {d.why && <div className="dim" style={{ fontSize: '.72rem', lineHeight: 1.4 }}>{d.why}</div>}
       </div>
       <span className="tag" style={d.status === 'accepted' ? { color: 'var(--acc)' } : { color: 'var(--label-3)' }}>
-        {d.status === 'accepted' ? t('applied') : t('declined')}
+        {titleCase(d.status === 'accepted' ? t('applied') : t('declined'))}
       </span>
     </div>)}
     {(e.notes || []).map((n, i) => <div key={i} className="muted small" style={{ marginTop: 10, lineHeight: 1.5 }}>💬 {n}</div>)}

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { useUI } from '../store/useUI.js'
-import { t } from '../lib/i18n.js'
+import { t, titleCase } from '../lib/i18n.js'
 import { DAYN } from '../lib/format.js'
 import { EXDB } from '../lib/exercises.js'
 import { emptyCoach, coachAvailable } from '../lib/coach.js'
@@ -145,7 +145,7 @@ export default function CoachIntake() {
         <div className="muted small" style={{ marginBottom: 10 }}>{t('Pick everything you have access to. Leave it empty and the Coach will use the whole library.')}</div>
         <div className="row" style={{ flexWrap: 'wrap', gap: 7 }}>
           {EQUIPMENT.map(e => <button key={e} className={'chip' + (p.equipment.includes(e) ? ' on' : '')}
-            onClick={() => toggleEq(e)} style={{ textTransform: 'capitalize' }}>{e}</button>)}
+            onClick={() => toggleEq(e)}>{titleCase(t(e))}</button>)}
         </div>
       </>}
 

@@ -6,7 +6,7 @@ import { exOr } from '../lib/exercises.js'
 import { effectiveRoutine, lastEntryFor, bestWeightFor, buildSets, setsDoneActive, supersetUnits, unitOf, setLabel, modeOf, EFFORT, effortOf, stepEffort, capEffort } from '../lib/history.js'
 import { fmtNum, fmtDate, todayISO, exCount, DAYN } from '../lib/format.js'
 import { beep, vibrate } from '../lib/sound.js'
-import { t, nameOf } from '../lib/i18n.js'
+import { t, nameOf, titleCase } from '../lib/i18n.js'
 import { api } from '../lib/api.js'
 import Media from '../components/Media.jsx'
 import { startFlow, exercisePicker, exConfigSheet, exerciseDetailSheet, topWeightSheet, finishWorkout, workoutCompleteSheet, confirmSheet } from '../sheets.jsx'
@@ -36,7 +36,7 @@ function StartChooser() {
       <div className="list">{others.map(r => <div key={r.id} className="item" onClick={() => startFlow(r.id)}>
         <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
         <div className="grow"><div className="tt">{r.name}</div><div className="ss">{exCount(r.ex.length)}</div></div>
-        <span className="tag acc">{t('Start')}</span></div>)}</div></>}
+        <span className="tag acc">{titleCase(t('Start'))}</span></div>)}</div></>}
     <div style={{ height: 14 }} />
     <Button icon="shuffle" onClick={() => startFlow(null)}>{t('Freestyle workout (pick as you go)')}</Button>
     {!S.routines.length && <><div style={{ height: 10 }} /><Button variant="primary" onClick={() => nav('/plan')}>{t('Build a plan first')}</Button></>}
@@ -105,9 +105,9 @@ function ExerciseBlock({ entryIdx, compact, onToggle, onField, onAddSet, onRemov
       <button className="iconbtn" aria-label={t('Details')} onClick={() => exerciseDetailSheet(ex)}><Icon name="info" /></button>
     </div>
     <div className="row" style={{ gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-      {cardio && <span className="tag acc"><Icon name="figureRun" />{t('Cardio')}</span>}
-      {(ex.tg || ex.bp) && <span className="tag">{t(ex.tg || ex.bp)}</span>}
-      {ex.eq && <span className="tag">{t(ex.eq)}</span>}
+      {cardio && <span className="tag acc"><Icon name="figureRun" />{titleCase(t('Cardio'))}</span>}
+      {(ex.tg || ex.bp) && <span className="tag">{titleCase(t(ex.tg || ex.bp))}</span>}
+      {ex.eq && <span className="tag">{titleCase(t(ex.eq))}</span>}
       {best > 0 && <span className="tag nocap">{t('Best:')} {fmtNum(best)} {S.unit}</span>}
     </div>
     {last && <div className="small dim" style={{ marginBottom: 4 }}>{t('Last time')} ({fmtDate(last.d)}): {last.sets.map(s => setLabel(entry.id, s, last.target)).join(', ')}</div>}

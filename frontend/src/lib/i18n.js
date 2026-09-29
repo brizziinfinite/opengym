@@ -57,6 +57,15 @@ export function t(s, ...args) {
 export const instrFor = ex => (instr && instr[ex.id]) || ex.st || []
 // Display name of an exercise in the current language. Custom exercises keep what the user typed.
 export const nameOf = ex => (ex && names && !ex.custom && names[ex.id]) || (ex && ex.n) || ''
+// Title case for short labels (chips, tags, day/routine titles). CSS text-transform capitalizes every
+// word, which reads wrong in Portuguese ("Máquina De Alavanca"), so pt labels are cased here — first
+// letter of each word up, connectives lower — and the CSS rule is switched off for pt.
+const PT_LOWER = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'com', 'na', 'no', 'em', 'a', 'o'])
+export function titleCase(s) {
+  if (lang !== 'pt' || typeof s !== 'string') return s
+  return s.split(' ').map((w, i) => i > 0 && PT_LOWER.has(w.toLowerCase())
+    ? w.toLowerCase() : w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+}
 // True while exercise names come from a names pack — those are already cased for display.
 export const namesLocalized = () => !!names
 

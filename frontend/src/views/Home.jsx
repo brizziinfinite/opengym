@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useStore } from '../store/useStore.js'
 import { effectiveRoutine, effectiveRoutineId, streakWeeks, lastBW, setsDoneActive } from '../lib/history.js'
 import { fmtNum, fmtDate, todayISO, isoOf, weekKey, DAYS } from '../lib/format.js'
-import { t, dateLocale } from '../lib/i18n.js'
+import { t, dateLocale, titleCase } from '../lib/i18n.js'
 import { bwSheet, goalSheet, dayOverrideSheet, calendarSheet, startFlow, loadStarterPlan, bwDeltaColor } from '../sheets.jsx'
 import LineChart from '../components/LineChart.jsx'
 import Icon from '../components/Icon.jsx'
@@ -34,7 +34,7 @@ function CoachCard({ nav }) {
             : t('Reading your training…')}</div>
         </div>
       </div>
-      {ready ? <span className="tag acc">{t('Review')}</span> : <Icon name="chevronRight" className="chev" />}
+      {ready ? <span className="tag acc">{titleCase(t('Review'))}</span> : <Icon name="chevronRight" className="chev" />}
     </div>
   </div>
 }
@@ -96,11 +96,11 @@ export default function Home() {
           </span>
           <div style={{ minWidth: 0 }}>
             <div className="lbl2">{t('Today')}</div>
-            <div className="ttl">{S.active ? t('{0} — in progress', S.active.name) : routine ? routine.name : t('Rest day')}{todayOvr && routine ? ' · ' + t('rescheduled') : ''}</div>
+            <div className="ttl">{titleCase((S.active ? t('{0} — in progress', S.active.name) : routine ? routine.name : t('Rest day')) + (todayOvr && routine ? ' · ' + t('rescheduled') : ''))}</div>
           </div>
         </div>
-        {S.active ? <span className="tag" style={{ color: 'var(--orange)', background: 'color-mix(in srgb,var(--orange) 16%,transparent)' }}>{t('Resume')}</span>
-          : routine ? <span className="tag acc">{t('Start')}</span>
+        {S.active ? <span className="tag" style={{ color: 'var(--orange)', background: 'color-mix(in srgb,var(--orange) 16%,transparent)' }}>{titleCase(t('Resume'))}</span>
+          : routine ? <span className="tag acc">{titleCase(t('Start'))}</span>
           : <Icon name="plus" className="chev" />}
       </div>
     </div>

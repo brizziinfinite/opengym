@@ -5,7 +5,7 @@ import { EXDB, EXIDX, BODYPARTS, isCardio, allExercises, equipmentOf } from './l
 import { fmtDate, fmtNum, fmtVol, fmtDur, durPart, todayISO, uid, exCount, DAYN, MONTHS_LONG, ACCENTS } from './lib/format.js'
 import { lastEntryFor, bestWeightFor, buildSets, effectiveRoutineId, workoutVolume, setsDone, setsDoneActive, lastBW, supersetUnits, unitOf, setLabel, defaultConfig, cleanupSg, modeOf, effortOf } from './lib/history.js'
 import { beep, vibrate } from './lib/sound.js'
-import { t, instrFor, nameOf, getLang, INSTR_LANGS } from './lib/i18n.js'
+import { t, instrFor, nameOf, titleCase, getLang, INSTR_LANGS } from './lib/i18n.js'
 import { nav } from './lib/nav.js'
 import { starterRoutines } from './lib/starter.js'
 import Media, { Thumb } from './components/Media.jsx'
@@ -288,10 +288,10 @@ function ExerciseDetail({ ex, close }) {
     <h3 className="capitalize">{nameOf(ex)}</h3>
     <Media ex={ex} />
     <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '10px 0' }}>
-      <span className="tag acc">{t(ex.bp)}</span>
-      {ex.tg && <span className="tag"><Icon name="target" />{t(ex.tg)}</span>}
-      <span className="tag"><Icon name="dumbbell" />{t(ex.eq)}</span>
-      {(ex.sm || []).slice(0, 3).map((s, i) => <span key={i} className="tag">{t(s)}</span>)}
+      <span className="tag acc">{titleCase(t(ex.bp))}</span>
+      {ex.tg && <span className="tag"><Icon name="target" />{titleCase(t(ex.tg))}</span>}
+      <span className="tag"><Icon name="dumbbell" />{titleCase(t(ex.eq))}</span>
+      {(ex.sm || []).slice(0, 3).map((s, i) => <span key={i} className="tag">{titleCase(t(s))}</span>)}
     </div>
     {ex.desc && <div className="exnote">{ex.desc}</div>}
     {best > 0 && <div className="small row" style={{ marginBottom: 6, gap: 5 }}><Icon name="trophy" style={{ fontSize: 14, color: 'var(--yellow)' }} />{t('Best:')} <b className="accent">{fmtNum(best)} {st.unit}</b>{last ? ` · ${t('last')} ${fmtDate(last.d)}: ${last.sets.map(s => setLabel(ex.id, s, last.target)).join(', ')}` : ''}</div>}
@@ -330,7 +330,7 @@ function AddToRoutine({ ex, close }) {
       {st.routines.map(r => <div key={r.id} className="item" onClick={() => pick(r.id)}>
         <span className="lrow-i"><Icon name={glyphOf(r.emoji)} /></span>
         <div className="grow"><div className="tt">{r.name}</div><div className="ss">{exCount(r.ex.length)}</div></div>
-        {r.ex.some(e => e.id === ex.id) && <span className="tag">{t('already in')}</span>}<Icon name="plus" className="chev" />
+        {r.ex.some(e => e.id === ex.id) && <span className="tag">{titleCase(t('already in'))}</span>}<Icon name="plus" className="chev" />
       </div>)}
       <div className="item" onClick={() => pick('_new')}><span className="lrow-i" style={{ background: 'var(--surface-3)' }}><Icon name="sparkles" /></span>
         <div className="grow"><div className="tt">{t('New routine')}</div><div className="ss">{t('Create one and start with this exercise')}</div></div><Icon name="plus" className="chev" /></div>
@@ -368,7 +368,7 @@ function CustomExForm({ existing, prefill, onDone, close }) {
     <div className="muted small" style={{ marginBottom: 12 }}>{t('Name it and pick a body part — it behaves like any other exercise, just without an animation.')}</div>
     <input className="input" placeholder={t('Exercise name')} value={n} onChange={e => setN(e.target.value)} />
     <div className="chips" style={{ margin: '12px 0' }}>
-      {BODYPARTS.map(b => <button key={b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => setBp(b)}>{t(b)}</button>)}
+      {BODYPARTS.map(b => <button key={b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => setBp(b)}>{titleCase(t(b))}</button>)}
     </div>
     {bp === 'cardio' && <div className="small dim row" style={{ marginBottom: 10, gap: 5 }}><Icon name="figureRun" style={{ fontSize: 13 }} />{t('Cardio exercises log time + speed instead of weight × reps.')}</div>}
     <textarea className="input" rows={4} maxLength={1000} placeholder={t('Description (optional) — setup, cues, anything you want to remember')}
@@ -431,13 +431,13 @@ function ExercisePicker({ onPick, close }) {
     <div className="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></svg>
       <input className="input" placeholder={t('Search {0} exercises…', all.length)} value={q} onChange={e => { setQ(e.target.value); setShown(50) }} /></div>
     <div className="chips" style={{ margin: eqOpts.length > 1 ? '10px 0 6px' : '10px 0' }}>
-      {chosenCount > 0 && <button className={'chip' + (bp === '★' ? ' on' : '')} onClick={() => { setBp('★'); setEq(''); setShown(50) }}><Icon name="starFill" style={{ fontSize: 12, display: 'inline-block', marginRight: 4, verticalAlign: '-1px' }} />{t('Chosen')} ({chosenCount})</button>}
+      {chosenCount > 0 && <button className={'chip' + (bp === '★' ? ' on' : '')} onClick={() => { setBp('★'); setEq(''); setShown(50) }}><Icon name="starFill" style={{ fontSize: 12, display: 'inline-block', marginRight: 4, verticalAlign: '-1px' }} />{titleCase(t('Chosen'))} ({chosenCount})</button>}
       <button className={'chip nocap' + (!bp ? ' on' : '')} onClick={() => { setBp(''); setEq(''); setShown(50) }}>{t('All')}</button>
-      {BODYPARTS.map(b => <button key={b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => { setBp(b); setEq(''); setShown(50) }}>{t(b)}</button>)}
+      {BODYPARTS.map(b => <button key={b} className={'chip' + (bp === b ? ' on' : '')} onClick={() => { setBp(b); setEq(''); setShown(50) }}>{titleCase(t(b))}</button>)}
     </div>
     {eqOpts.length > 1 && <div className="chips" style={{ marginBottom: 10 }}>
       <button className={'chip nocap' + (!eqOn ? ' on' : '')} onClick={() => { setEq(''); setShown(50) }}>{t('Any equipment')}</button>
-      {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(50) }}>{t(x)}</button>)}
+      {eqOpts.map(x => <button key={x} className={'chip' + (eqOn === x ? ' on' : '')} onClick={() => { setEq(x); setShown(50) }}>{titleCase(t(x))}</button>)}
     </div>}
     <div className="list">
       {bp !== '★' && <div className="item" onClick={() => customExSheet(null, ex => onPick(ex), q.trim())}>
@@ -512,8 +512,8 @@ function ExConfig({ ex, existing, onSave, onDelete, close, routine }) {
     <h3 className="capitalize">{nameOf(ex)}</h3>
     <Media ex={ex} />
     <div className="row" style={{ gap: 6, flexWrap: 'wrap', margin: '10px 0 14px' }}>
-      {cardio && <span className="tag acc"><Icon name="figureRun" />{t('Cardio')}</span>}
-      <span className="tag">{t(ex.tg || ex.bp)}</span><span className="tag">{t(ex.eq)}</span>
+      {cardio && <span className="tag acc"><Icon name="figureRun" />{titleCase(t('Cardio'))}</span>}
+      <span className="tag">{titleCase(t(ex.tg || ex.bp))}</span><span className="tag">{titleCase(t(ex.eq))}</span>
     </div>
     {ex.desc && <div className="exnote">{ex.desc}</div>}
     {!cardio && <div style={{ marginBottom: 14 }}>

@@ -155,6 +155,8 @@ button,.chip,.tile,.item,.wday,.cal-d,.swatch,.hm-c,.lrow,.seg button,.stp butto
 .capitalize{text-transform:capitalize}
 :root[data-local-names] .capitalize,:root[data-local-names] #timer.working .lbl{text-transform:none}
 :root[data-local-names] .capitalize::first-letter{text-transform:uppercase}
+/* pt labels are title-cased in JS (titleCase in lib/i18n.js), keeping de/da/com… lower */
+:root[lang="pt"] .tag,:root[lang="pt"] .chip,:root[lang="pt"] .today-row .ttl{text-transform:none}
 /* exercise names and body-part/equipment terms arrive lowercase from the dataset,
    so tags and chips capitalise by default. Anything that is a unit or a sentence opts
    back out — blanket-capitalising turned "60 kg" into "60 Kg" and a whole hint into
