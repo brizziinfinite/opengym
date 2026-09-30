@@ -1,6 +1,7 @@
 # Melhorias — Levanta
 
 ## Alta Prioridade
+- [x] ~~Fix i18n: pacote de idioma que falha ao carregar não trava mais em inglês (commit 078e2a1, outra sessão)~~ 2026-09-29
 - [ ] Testar o assistente com Evolution API e Gemini reais (fotos dos aparelhos e registro por texto livre) — até agora testado em modo simulado
 - [ ] Página de privacidade (LGPD art. 11): o que é guardado, por quê, e como apagar — o consentimento no WhatsApp deve apontar para ela
 - [ ] Revisão dos modelos de plano (`api/wa/plan.js`) por profissional com CREF (Lei 9.696/98)
@@ -10,6 +11,8 @@
 - [x] ~~Rebrand: nome Levanta e ícone novo~~ 2026-09-29
 
 ## Média Prioridade
+- [ ] Validar o fix de i18n (commit 078e2a1) em deploy real: bloquear o chunk do locale no DevTools e confirmar que não trava mais em inglês
+- [ ] Fechar o PR #1 no GitHub (mergeado localmente na main; fica órfão)
 - [x] ~~Parada de emergência (dor no peito, tontura…), limite de 3 dias para iniciante, caminhadas, condições novas (ombro, osteoporose, quadril, labirintite, evento recente, câncer)~~ 2026-09-29
 - [x] ~~COMO n envia a animação; testes funcionais mensais; sequência semanal; modo silencioso após 14 dias sem resposta~~ 2026-09-29
 - [x] ~~Bug: dia remarcado pelo WhatsApp era apagado pelo app web; fotos reduzidas (sharp, sem EXIF); backup diário~~ 2026-09-29

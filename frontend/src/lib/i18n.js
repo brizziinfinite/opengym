@@ -37,6 +37,7 @@ const instrPacks = import.meta.glob('../instr/*.js')
 const namePacks = import.meta.glob('../names/*.js')
 
 let lang = 'en'
+let loadedLang = null        // last language whose packs actually resolved — null on first load or after a failed import
 let dict = {}
 let instr = null            // { exId: [steps] } for the current language, null = English
 let names = null            // { exId: name } for the current language, null = English
@@ -73,16 +74,18 @@ export const namesLocalized = () => !!names
 
 export async function setLang(l) {
   if (!LANGS[l]) l = 'en'
-  if (l === lang && version > 0) return
+  if (l === lang && loadedLang === l) return
   lang = l
+  let ok = true
   try {
     dict = l === 'en' ? {} : (await localePacks['../locales/' + l + '.js']()).default
     instr = l === 'en' || !INSTR_LANGS.includes(l) ? null : (await instrPacks['../instr/' + l + '.js']()).default
-  } catch (e) { dict = {}; instr = null }
+  } catch (e) { dict = {}; instr = null; ok = false }
   try {
     const np = namePacks['../names/' + l + '.js']
     names = np ? (await np()).default : null
-  } catch (e) { names = null }
+  } catch (e) { names = null; ok = false }
+  loadedLang = ok ? l : null   // a failed import must be retryable, not cached as done
   notify()
 }
 
