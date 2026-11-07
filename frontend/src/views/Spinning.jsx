@@ -16,6 +16,7 @@ export default function Spinning() {
   const [now, setNow] = useState(() => Date.now())
   const [showTracks, setShowTracks] = useState(false)
   const [showBuilder, setShowBuilder] = useState(false)
+  const [editing, setEditing] = useState(null)
   const spin = S.spinning || { active: null, history: [] }
   const active = spin.active
   const classes = [...SPINNING_CLASSES, ...(spin.classes || [])]
@@ -99,10 +100,10 @@ export default function Spinning() {
     </div>
 
     {!active ? <>
-      {showBuilder && <SpinningBuilder onSaved={() => setShowBuilder(false)} onCancel={() => setShowBuilder(false)} />}
+      {showBuilder && <SpinningBuilder key={editing?.id || 'new'} initial={editing} onSaved={() => { setShowBuilder(false); setEditing(null) }} onCancel={() => { setShowBuilder(false); setEditing(null) }} />}
       {S.active && <div className="card"><div className="small muted">Existe um treino de musculação em andamento. Encerre-o antes de iniciar uma aula de spinning.</div></div>}
       <div className="card">
-        <div className="row between" style={{ marginBottom: 12 }}><h2 style={{ margin: 0 }}>Biblioteca de aulas</h2><Button icon="plus" size="sm" variant="tinted" onClick={() => setShowBuilder(v => !v)}>{showBuilder ? "Fechar editor" : "Criar aula"}</Button></div>
+        <div className="row between" style={{ marginBottom: 12 }}><h2 style={{ margin: 0 }}>Biblioteca de aulas</h2><Button icon="plus" size="sm" variant="tinted" onClick={() => { setEditing(null); setShowBuilder(v => !v) }}>{showBuilder ? "Fechar editor" : "Criar aula"}</Button></div>
         <div className="row" style={{ gap: 10, marginBottom: 10 }}>
           <span className="lrow-i"><Icon name="bike" /></span>
           <div><h2 style={{ margin: 0 }}>Escolha uma aula</h2><div className="small muted">O Spotify é aberto separadamente pelo professor.</div></div>
@@ -113,7 +114,10 @@ export default function Spinning() {
             <div className="tt">{c.title}</div>
             <div className="ss">{c.subtitle} · {clock(durationSeconds(c))} · {c.tracks.length} sugestões de músicas</div>
           </div>
-          <Button size="sm" variant="tinted" icon="play" onClick={() => start(c)} disabled={!!S.active}>Iniciar</Button>
+          <div className="row" style={{ gap: 6 }}>
+            {c.id.startsWith("spin-") && <Button size="sm" icon="pencil" onClick={() => { setEditing(c); setShowBuilder(true) }} disabled={!!S.active}>Editar</Button>}
+            <Button size="sm" variant="tinted" icon="play" onClick={() => start(c)} disabled={!!S.active}>Iniciar</Button>
+          </div>
         </div>)}</div>
       </div>
       <div className="card">
