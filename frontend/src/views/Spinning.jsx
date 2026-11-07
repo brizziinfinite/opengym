@@ -28,6 +28,15 @@ export default function Spinning() {
   const prevPhase = useRef(null)
 
   useEffect(() => {
+    if (!showBuilder) return
+    const frame = window.requestAnimationFrame(() => {
+      const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      document.getElementById('spinning-builder')?.scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [showBuilder, editing?.id])
+
+  useEffect(() => {
     if (!active?.running) return
     setNow(Date.now())
     const id = setInterval(() => setNow(Date.now()), 500)
