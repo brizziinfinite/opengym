@@ -49,7 +49,7 @@ export default function Home() {
   const [weekOffset, setWeekOffset] = useState(0)
   const coachOn = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE })
   // First run: nothing planned, nothing logged, never answered the profile → ask it first.
-  const fresh = !S.profile && !S.routines.length && !S.workouts.length && !S.active
+  const fresh = !S.profile && !S.routines.length && !S.workouts.length && !S.active && !S.spinning?.active && !(S.spinning?.history || []).length
   useEffect(() => { if (fresh && !DEMO) nav('/welcome', { replace: true }) }, [fresh, nav])
 
   const today = new Date()
@@ -126,6 +126,16 @@ export default function Home() {
     )}
 
     <ProgressCards />
+
+    <div className="card tappable" style={{ cursor: 'pointer' }} onClick={() => nav('/spinning')}>
+      <div className="today-row">
+        <div className="row" style={{ gap: 10, minWidth: 0 }}>
+          <span className="lrow-i" style={{ background: 'var(--acc)' }}><Icon name="bike" /></span>
+          <div><div className="lbl2">SPINNING STUDIO</div><div className="ttl">Aulas guiadas por música</div><div className="small muted">4 programas, cronômetro, cadência e orientações</div></div>
+        </div>
+        <Icon name="chevronRight" className="chev" />
+      </div>
+    </div>
 
     {!S.routines.length && !S.active && (
       <div className="card">
