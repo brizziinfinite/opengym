@@ -8,15 +8,15 @@ import { Button, NumberField, SelectRow, TextField, TextArea, Check } from '../c
 
 // Drafts remain local until the teacher approves them. The provider receives only
 // duration, genre, and difficulty, never body weight, health history, or workout logs.
-export default function SpinningBuilder({ onSaved, onCancel }) {
+export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
   const user = useStore(s => s.user)
   const config = useStore(s => s.config)
-  const [style, setStyle] = useState('mix')
-  const [duration, setDuration] = useState(50)
-  const [level, setLevel] = useState('moderate')
-  const [draft, setDraft] = useState(null)
+  const [style, setStyle] = useState(initial?.style || 'mix')
+  const [duration, setDuration] = useState(initial ? initial.phases.reduce((n, p) => n + p.seconds, 0) / 60 : 50)
+  const [level, setLevel] = useState(initial?.level || 'moderate')
+  const [draft, setDraft] = useState(initial ? JSON.parse(JSON.stringify(initial)) : null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const consent = !!S.spinning?.aiConsent?.agreedAt
@@ -55,11 +55,13 @@ export default function SpinningBuilder({ onSaved, onCancel }) {
     const errors = validateDraft(draft, duration)
     if (draft?.phases?.some(p => p.rpe > levelCeiling)) errors.push('A intensidade ultrapassou o nível escolhido.')
     if (errors.length) return setError(errors.join(' '))
-    const item = { ...draft, id: 'spin-' + uid(), createdAt: Date.now() }
+    const item = { ...draft, style, level, id: initial?.id || 'spin-' + uid(), createdAt: initial?.createdAt || Date.now(), updatedAt: Date.now() }
     update(s => {
       if (!s.spinning) s.spinning = { active: null, history: [] }
       if (!Array.isArray(s.spinning.classes)) s.spinning.classes = []
-      s.spinning.classes.push(item)
+      const existing = s.spinning.classes.findIndex(x => x.id === item.id)
+      if (existing >= 0) s.spinning.classes[existing] = item
+      else s.spinning.classes.push(item)
     })
     setDraft(null)
     setError('')
@@ -70,7 +72,7 @@ export default function SpinningBuilder({ onSaved, onCancel }) {
 
   return <div className="card">
     <div className="row between" style={{ marginBottom: 12 }}>
-      <h2 style={{ margin: 0 }}>Criar aula de spinning</h2>
+      <h2 style={{ margin: 0 }}>{initial ? 'Editar aula' : 'Criar aula de spinning'}</h2>
       <Button variant="ghost" size="sm" onClick={onCancel}>Fechar</Button>
     </div>
     <div className="sect-b">
