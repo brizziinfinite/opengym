@@ -31,7 +31,7 @@ export default function Spinning() {
     if (!showBuilder) return
     const frame = window.requestAnimationFrame(() => {
       const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-      document.getElementById('spinning-builder')?.scrollIntoView({ behavior: reducedMotion ? 'instant' : 'smooth', block: 'start' })
+      document.getElementById('spinning-builder')?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' })
     })
     return () => window.cancelAnimationFrame(frame)
   }, [showBuilder, editing?.id])
