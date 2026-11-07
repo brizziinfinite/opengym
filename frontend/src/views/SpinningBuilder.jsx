@@ -46,7 +46,16 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
       const result = await api('/api/spinning/generate', {
         method: 'POST', body: JSON.stringify({ duration, style, level })
       })
-      setDraft({ ...result.proposal, playlistUrl: '' })
+      let proposal = null
+      // The API returns 202 immediately; polling avoids reverse-proxy timeouts.
+      for (let i = 0; i < 70; i++) {
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        const status = await api('/api/spinning/status?job=' + encodeURIComponent(result.job.id))
+        if (status.job?.state === 'failed') throw new Error(status.job.error || 'A IA não conseguiu criar a aula.')
+        if (status.job?.state === 'ready') { proposal = status.proposal; break }
+      }
+      if (!proposal) throw new Error('A IA demorou demais. Tente novamente.')
+      setDraft({ ...proposal, playlistUrl: '' })
     } catch (e) { setError(e.message || 'Falha na geração da aula.') }
     finally { setBusy(false) }
   }
