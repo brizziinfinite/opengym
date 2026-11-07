@@ -17,6 +17,8 @@ export default function Spinning() {
   const [showTracks, setShowTracks] = useState(false)
   const [showBuilder, setShowBuilder] = useState(false)
   const [editing, setEditing] = useState(null)
+  const [viewMode, setViewMode] = useState('teacher')
+  const [voice, setVoice] = useState(false)
   const spin = S.spinning || { active: null, history: [] }
   const active = spin.active
   const classes = [...SPINNING_CLASSES, ...(spin.classes || [])]
@@ -37,9 +39,18 @@ export default function Spinning() {
     if (active?.running && prevPhase.current && currentKey && prevPhase.current !== currentKey) {
       beep(S.sound, 880, 0.15)
       vibrate(100)
+      if (voice && viewMode === 'teacher' && typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel()
+          const utterance = new SpeechSynthesisUtterance(phase.phase.cue)
+          utterance.lang = 'pt-BR'
+          utterance.rate = 1
+          window.speechSynthesis.speak(utterance)
+        } catch { /* some platforms block synthesized speech */ }
+      }
     }
     prevPhase.current = currentKey
-  }, [active?.classId, active?.running, phase?.index, S.sound])
+  }, [active?.classId, active?.running, phase?.index, S.sound, voice, viewMode])
 
   function start(c) {
     if (S.active || active) return
@@ -141,6 +152,13 @@ export default function Spinning() {
         </div>
       </div>
       <div className="card">
+        <div className="row between" style={{ marginBottom: 10 }}>
+          <div className="small muted">Visualização de aula</div>
+          <div className="row" style={{ gap: 6 }}>
+            <Button size="sm" variant={viewMode === "teacher" ? "tinted" : "plain"} onClick={() => setViewMode("teacher")}>Professor</Button>
+            <Button size="sm" variant={viewMode === "student" ? "tinted" : "plain"} onClick={() => setViewMode("student")}>Aluno</Button>
+          </div>
+        </div>
         <div className="row between">
           <h2 style={{ margin: 0 }}>{phase.phase.name}</h2>
           <span className="tag acc">Etapa {phase.index + 1}/{chosen.phases.length}</span>
@@ -150,13 +168,15 @@ export default function Spinning() {
           <div className="tile"><div className="l">Esforço percebido</div><div className="v" style={{ fontSize: 23 }}>{phase.phase.rpe}/10</div></div>
         </div>
         <div className="small muted" style={{ marginTop: 12 }}>Próxima mudança em {clock(phase.remaining)}</div>
-        <div style={{ marginTop: 12, padding: 12, background: 'var(--surface-2)', borderRadius: 12 }}>
+        {viewMode === "teacher" && <div style={{ marginTop: 12, padding: 12, background: "var(--surface-2)", borderRadius: 12 }}>
           <div className="small muted" style={{ marginBottom: 6 }}>ORIENTAÇÃO DO PROFESSOR</div>
           <div>{phase.phase.cue}</div>
-        </div>
+          <div style={{ marginTop: 10 }}><Button size="sm" icon="volume" variant={voice ? "tinted" : "plain"} onClick={() => setVoice(v => !v)}>{voice ? "Voz automática ligada" : "Ativar voz nas próximas etapas"}</Button></div>
+          <div className="small muted" style={{ marginTop: 6 }}>A voz pode interromper o áudio externo em alguns aparelhos; vem desligada por padrão.</div>
+        </div>}
         {elapsed >= durationSeconds(chosen) && <p className="small">A sequência terminou. Encerre para registrar a aula.</p>}
       </div>
-      <div className="card">
+      {viewMode === 'teacher' && <div className="card">
         <div className="row between">
           <h2 style={{ margin: 0 }}>Sequência musical sugerida</h2>
           <Button size="sm" variant="ghost" onClick={() => setShowTracks(v => !v)}>{showTracks ? 'Ocultar' : 'Ver músicas'}</Button>
@@ -164,7 +184,7 @@ export default function Spinning() {
         {showTracks && <div className="list">{chosen.tracks.map(([title, artist], i) => <div className="item" key={i}><span className="small muted">{i + 1}.</span><div className="grow"><div className="tt">{title}</div><div className="ss">{artist}</div></div></div>)}</div>}
         <div className="small muted" style={{ marginTop: 10 }}>Música tocada em aplicativo externo. O Gyn não controla nem sincroniza o Spotify.</div>
         <a className="btn" style={{ marginTop: 10 }} href={chosen.playlistUrl || "https://open.spotify.com/"} target="_blank" rel="noopener noreferrer">Abrir playlist externa <Icon name="link" /></a>
-      </div>
+      </div>}
     </> : <div className="card">Aula não encontrada. Reabra o aplicativo ou atualize o programa.</div>}
 
     {(spin.history || []).length > 0 && <div className="card">
