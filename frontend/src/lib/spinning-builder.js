@@ -6,6 +6,19 @@ export const GENRES = [
   { value: 'rock', label: 'Rock Classics', preset: 'rock-classics' },
   { value: 'electronic', label: 'Eletrônico atual', preset: 'electronic' }
 ]
+export const AI_DURATIONS = [30, 45, 50, 60]
+
+// Built-in programs may run for 49/53 minutes and reach RPE 7. Starting their
+// editor with a 50-minute or moderate-intensity assumption would make the
+// untouched draft invalid and hide its real preset style.
+export function initialBuilderSettings(initial) {
+  return {
+    style: initial?.style || GENRES.find(g => g.preset === initial?.id)?.value || 'mix',
+    duration: initial ? durationSeconds(initial) / 60 : 50,
+    level: initial?.level || (initial?.phases?.some(p => p.rpe > 6) ? 'challenging' : 'moderate')
+  }
+}
+
 export const INTENSITIES = [
   { value: 'light', label: 'Leve', ceiling: 4 },
   { value: 'moderate', label: 'Moderada', ceiling: 6 },
