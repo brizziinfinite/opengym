@@ -5,6 +5,9 @@ Branch: `feat/spinning-studio-ai` (não publicar em produção antes de revisar 
 ## Decisões de produto
 
 - Spinning é um módulo do Gyn/Levanta, não um novo aplicativo.
+- **Decisão reafirmada em 2026-11-07:** manter o Spotify como serviço externo, com uma passagem simples pelo Gyn, análoga a um checkout externo bem integrado na experiência do usuário. Isso **não** significa player invisível embutido, reprodução pelo Gyn, controle de Spotify ou autorização comercial.
+- O professor vincula manualmente uma URL HTTPS de playlist a uma aula personalizada; a biblioteca exibe **Playlist** somente quando existe link válido. O professor abre o Spotify oficial, retorna ao Gyn e inicia o relógio da aula. A aplicação não transmite credenciais, não mantém OAuth nem grava conteúdo musical do Spotify.
+- Personalizar uma das quatro aulas-padrão salva uma **nova cópia identificada por `spin-...`**, evitando substituir ou duplicar identificadores das aulas de fábrica.
 - O áudio **não** é reproduzido, espelhado ou controlado pelo Gyn na primeira versão.
 - Professores podem abrir um serviço de música externo, mas a execução pública exige direitos próprios; contas pessoais não substituem licenças.
 - O cronômetro da aula é manual e **não** acompanha automaticamente cada música.
@@ -64,6 +67,7 @@ Contrato utilizado (campos principais):
 ## Fase 3 — Música e sincronização opcional
 
 - [x] Vincular URLs HTTPS de playlists fornecidas pelo professor, sem assumir autorização comercial.
+- [x] Simplificar a passagem para o Spotify com botão de playlist junto à aula, sem link genérico enganoso e com personalização não destrutiva dos presets.
 - [x] Música por player externo na configuração básica. A interface oferece acesso ao Spotify/Apple Music, mas não controla o áudio.
 - Não integrar a API/Web Playback SDK do Spotify para aula comercial sem aprovação específica do fornecedor.
 - Só implementar reprodução interna depois de validar catálogo, país, contrato e licenças.
