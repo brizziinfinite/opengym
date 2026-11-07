@@ -131,7 +131,7 @@ export default function Home() {
       <div className="today-row">
         <div className="row" style={{ gap: 10, minWidth: 0 }}>
           <span className="lrow-i" style={{ background: 'var(--acc)' }}><Icon name="bike" /></span>
-          <div><div className="lbl2">SPINNING STUDIO</div><div className="ttl">Aulas guiadas por música</div><div className="small muted">4 programas, cronômetro, cadência e orientações</div></div>
+          <div><div className="lbl2">SPINNING STUDIO</div><div className="ttl">Aulas guiadas por música</div><div className="small muted">Aulas prontas e criadas por IA, cadência e orientações</div></div>
         </div>
         <Icon name="chevronRight" className="chev" />
       </div>
