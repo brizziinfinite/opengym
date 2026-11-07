@@ -5,7 +5,8 @@ import { uid } from '../lib/format.js'
 import { confirmSheet } from '../sheets.jsx'
 import { Button } from '../components/ui.jsx'
 import Icon from '../components/Icon.jsx'
-import { SPINNING_CLASSES, classById, durationSeconds, sessionElapsed, phaseAt, clock } from '../lib/spinning.js'
+import { SPINNING_CLASSES, durationSeconds, sessionElapsed, phaseAt, clock } from '../lib/spinning.js'
+import SpinningBuilder from './SpinningBuilder.jsx'
 
 // Audio plays in the provider's official app, never in Gyn.
 // The Gyn clock is started manually and does not claim track-accurate synchronization.
@@ -14,9 +15,11 @@ export default function Spinning() {
   const update = useStore(s => s.update)
   const [now, setNow] = useState(() => Date.now())
   const [showTracks, setShowTracks] = useState(false)
+  const [showBuilder, setShowBuilder] = useState(false)
   const spin = S.spinning || { active: null, history: [] }
   const active = spin.active
-  const chosen = active ? classById(active.classId) : null
+  const classes = [...SPINNING_CLASSES, ...(spin.classes || [])]
+  const chosen = active ? classes.find(c => c.id === active.classId) : null
   const elapsed = active ? sessionElapsed(active, now) : 0
   const phase = chosen ? phaseAt(chosen, elapsed) : null
   const prevPhase = useRef(null)
@@ -72,7 +75,7 @@ export default function Spinning() {
         update(s => {
           const a = s.spinning?.active
           if (!a) return
-          const c = classById(a.classId)
+          const c = [...SPINNING_CLASSES, ...(s.spinning?.classes || [])].find(x => x.id === a.classId)
           if (!c) { s.spinning.active = null; return }
           const seconds = Math.min(durationSeconds(c), Math.floor(sessionElapsed(a, Date.now())))
           if (seconds >= 60) {
@@ -96,13 +99,15 @@ export default function Spinning() {
     </div>
 
     {!active ? <>
+      {showBuilder && <SpinningBuilder onSaved={() => setShowBuilder(false)} onCancel={() => setShowBuilder(false)} />}
       {S.active && <div className="card"><div className="small muted">Existe um treino de musculação em andamento. Encerre-o antes de iniciar uma aula de spinning.</div></div>}
       <div className="card">
+        <div className="row between" style={{ marginBottom: 12 }}><h2 style={{ margin: 0 }}>Biblioteca de aulas</h2><Button icon="plus" size="sm" variant="tinted" onClick={() => setShowBuilder(v => !v)}>{showBuilder ? "Fechar editor" : "Criar aula"}</Button></div>
         <div className="row" style={{ gap: 10, marginBottom: 10 }}>
           <span className="lrow-i"><Icon name="bike" /></span>
           <div><h2 style={{ margin: 0 }}>Escolha uma aula</h2><div className="small muted">O Spotify é aberto separadamente pelo professor.</div></div>
         </div>
-        <div className="list">{SPINNING_CLASSES.map(c => <div key={c.id} className="item" style={{ cursor: 'default' }}>
+        <div className="list">{classes.map(c => <div key={c.id} className="item" style={{ cursor: 'default' }}>
           <span className="lrow-i"><Icon name="bike" /></span>
           <div className="grow">
             <div className="tt">{c.title}</div>
@@ -154,7 +159,7 @@ export default function Spinning() {
         </div>
         {showTracks && <div className="list">{chosen.tracks.map(([title, artist], i) => <div className="item" key={i}><span className="small muted">{i + 1}.</span><div className="grow"><div className="tt">{title}</div><div className="ss">{artist}</div></div></div>)}</div>}
         <div className="small muted" style={{ marginTop: 10 }}>Música tocada em aplicativo externo. O Gyn não controla nem sincroniza o Spotify.</div>
-        <a className="btn" style={{ marginTop: 10 }} href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">Abrir Spotify <Icon name="link" /></a>
+        <a className="btn" style={{ marginTop: 10 }} href={chosen.playlistUrl || "https://open.spotify.com/"} target="_blank" rel="noopener noreferrer">Abrir playlist externa <Icon name="link" /></a>
       </div>
     </> : <div className="card">Aula não encontrada. Reabra o aplicativo ou atualize o programa.</div>}
 
