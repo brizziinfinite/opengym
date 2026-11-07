@@ -79,7 +79,7 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
 
   const changeSettings = (fn, value) => { fn(value); setDraft(null); setError('') }
 
-  return <div className="card">
+  return <div className="card spin-builder" id="spinning-builder">
     <div className="row between" style={{ marginBottom: 12 }}>
       <h2 style={{ margin: 0 }}>{initial?.id?.startsWith('spin-') ? 'Editar aula' : initial ? 'Personalizar aula' : 'Criar aula de spinning'}</h2>
       <Button variant="ghost" size="sm" onClick={onCancel}>Fechar</Button>
