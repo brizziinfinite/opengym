@@ -64,7 +64,7 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
     const errors = validateDraft(draft, duration)
     if (draft?.phases?.some(p => p.rpe > levelCeiling)) errors.push('A intensidade ultrapassou o nível escolhido.')
     if (errors.length) return setError(errors.join(' '))
-    const item = { ...draft, style, level, id: initial?.id || 'spin-' + uid(), createdAt: initial?.createdAt || Date.now(), updatedAt: Date.now() }
+    const item = { ...draft, style, level, id: initial?.id?.startsWith('spin-') ? initial.id : 'spin-' + uid(), createdAt: initial?.createdAt || Date.now(), updatedAt: Date.now() }
     update(s => {
       if (!s.spinning) s.spinning = { active: null, history: [] }
       if (!Array.isArray(s.spinning.classes)) s.spinning.classes = []
@@ -81,7 +81,7 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
 
   return <div className="card">
     <div className="row between" style={{ marginBottom: 12 }}>
-      <h2 style={{ margin: 0 }}>{initial ? 'Editar aula' : 'Criar aula de spinning'}</h2>
+      <h2 style={{ margin: 0 }}>{initial?.id?.startsWith('spin-') ? 'Editar aula' : initial ? 'Personalizar aula' : 'Criar aula de spinning'}</h2>
       <Button variant="ghost" size="sm" onClick={onCancel}>Fechar</Button>
     </div>
     <div className="sect-b">
@@ -120,7 +120,7 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
       <div className="small muted" style={{ margin: '12px 0 6px' }}>Playlist externa (opcional)</div>
       <TextField value={draft.playlistUrl || ''} placeholder="https://open.spotify.com/playlist/..."
         onChange={e => edit(c => { c.playlistUrl = e.target.value })} />
-      <p className="small muted">O professor abre a playlist no app musical. Não há reprodução nem sincronização do Spotify dentro do Gyn.</p>
+      <p className="small muted">A playlist é aberta no aplicativo oficial do Spotify ou Apple Music. O professor volta ao Gyn para iniciar o roteiro; não há reprodução ou sincronização de áudio dentro do Gyn.</p>
       <div className="small muted" style={{ marginBottom: 10 }}>
         Ajuste tempo, cadência, esforço e comandos. A soma deve ser exatamente {duration} minutos.
       </div>
