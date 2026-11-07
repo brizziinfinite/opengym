@@ -31,59 +31,67 @@ S.spinning = {
 }
 ```
 
-A implementação evita alterar o contrato de treinos de musculação (`S.workouts`).
-A integração de estatísticas gerais precisará tratar ambos os tipos explicitamente, sem inventar volume muscular.
+A implementação evita alterar o contrato de treinos de musculação (`S.workouts`). Os minutos de spinning já entram nos indicadores próprios e no heatmap de atividades, sem inventar volume muscular.
 
-## Fase 2 — IA na criação de aulas (próxima alteração, antes de lançamento)
+As aulas personalizadas são armazenadas em `S.spinning.classes`, com histórico em `S.spinning.history` e consentimento da IA em `S.spinning.aiConsent`. Os modos Professor e Aluno compartilham o mesmo motor de aula.
+
+## Fase 2 — IA na criação de aulas (implementação nesta branch; validação pendente)
 
 **Reaproveitar o provedor administrado pelo AI Coach**, mas criar rota e contrato específicos de spinning. Não usar a rota `/api/coach/plan`, pois ela valida treinos de musculação.
 
-Fluxo proposto:
+Fluxo implementado:
 
-1. Professor informa duração (30/45/50/60 min), gênero musical, nível e objetivo.
-2. API autenticada exige opt-in específico para IA, usa caps e adaptadores isolados já existentes.
-3. O provedor gera **somente JSON estruturado**; nenhum acesso externo a músicas é necessário.
+1. Professor informa duração (30/45/50/60 min), gênero musical e nível.
+2. API autenticada exige consentimento de IA salvo no servidor; limita 3 solicitações por usuário/dia e 2 simultâneas. Reutiliza os adaptadores isolados já existentes.
+3. O provedor gera **JSON estruturado** em uma tarefa assíncrona; `/api/spinning/generate` retorna 202 e `/api/spinning/status?job=...` fornece o resultado; nenhum acesso a catálogo externo é feito.
 4. Validação determinística aplica limites de RPM/RPE, duração total, etapas e texto. Propostas inválidas são rejeitadas.
 5. Resultado é uma **prévia editável**. Só uma aprovação explícita salva a aula.
 6. Dados enviados à IA devem ser mínimos: preferências da aula, sem histórico ou dados de saúde de alunos por padrão.
 7. Os programas manuais continuam disponíveis quando o provedor de IA estiver offline.
 
-Contrato sugerido:
+Contrato utilizado (campos principais):
 
 ```json
 {
   "title": "Spinning 80/90 Dance",
-  "durationSeconds": 3000,
-  "style": "dance-8090",
-  "phases": [
+    "phases": [
     { "name": "Aquecimento", "seconds": 600, "rpmMin": 65, "rpmMax": 80, "rpe": 3, "cue": "..." }
   ],
-  "musicQueries": [{ "title": "...", "artist": "..." }]
+  "tracks": [{ "title": "...", "artist": "..." }]
 }
 ```
 
 ## Fase 3 — Música e sincronização opcional
 
-- Vincular URLs de playlists fornecidas pelo professor, sem assumir autorização comercial.
-- Música sempre por player externo na configuração básica.
+- [x] Vincular URLs HTTPS de playlists fornecidas pelo professor, sem assumir autorização comercial.
+- [x] Música por player externo na configuração básica. A interface oferece acesso ao Spotify/Apple Music, mas não controla o áudio.
 - Não integrar a API/Web Playback SDK do Spotify para aula comercial sem aprovação específica do fornecedor.
 - Só implementar reprodução interna depois de validar catálogo, país, contrato e licenças.
 - Sincronização por faixa requer timestamps reais do player autorizado; nunca simular precisão.
 
 ## Definição de pronto
 
-- [ ] Fase 1 passa Vitest e build.
-- [ ] Nenhuma alteração na `main` sem PR revisado.
+- [ ] Executar Vitest e build no CI; há testes no repositório e 48 verificações puras feitas sobre o código publicado na branch.
+- [x] Nenhuma alteração na `main`; PR #2 é rascunho para revisão.
 - [ ] Pausa e retomada não duplicam sessões.
 - [ ] Sessões persistem no modo guest, PWA e sincronização autenticada.
-- [ ] Não há áudio embutido, chaves ou tokens de Spotify.
-- [ ] A IA nunca grava plano sem revisão humana.
-- [ ] App continua útil sem IA e sem internet.
+- [x] Não há áudio embutido, chaves ou tokens de Spotify.
+- [x] A IA apenas gera uma prévia; o professor revisa e salva explicitamente.
+- [x] Quatro programas e templates continuam disponíveis sem IA. Verificar offline em dispositivo real.
 
 ## Economia de tokens no ambiente do agente
 
 Caveman Lite e TKR são utilitários de **processo de desenvolvimento**, não módulos para instalar no frontend/API do Gyn. Ativá-los no agente/terminal do desenvolvedor, se já estiverem instalados, fora do runtime de produção.
 
-- Caveman: selecionar modo `lite` usando o comando da versão instalada (por exemplo `/caveman lite`).
-- TKR: conferir `tkr status`; no Codex, setup/hook dependem da distribuição instalada. Não modificar a configuração global do desenvolvedor nem instalar versões desconhecidas pelo CI.
+- Caveman: seguir a versão instalada; verificar modo e hook na sessão do Claude Code, conforme `docs/DEVELOPMENT_SESSION_TOOLS.md`.
+- TKR: conferir `tkr doctor` e `tkr status` na máquina do desenvolvedor. Não alterar configuração global sem autorização.
 - Nenhum destes utilitários substitui testes, validação de IA ou revisão de segurança.
+
+
+## Limitações verificadas
+
+- Os jobs de IA ficam em memória no backend (20 min após finalização). Reiniciar o servidor durante uma geração cancela a possibilidade de recuperar o resultado; uma fila persistente seria evolução futura.
+- O navegador consulta o status do job enquanto o editor está aberto; sair da tela pode exigir iniciar nova consulta, mas nunca grava sugestões sem aprovação.
+- A primeira versão não sincroniza mudanças de música/refrões; orientações são baseadas no relógio da aula.
+- A voz automática usa síntese do navegador, desligada por padrão; pode interferir no áudio externo e exige teste em dispositivos.
+- GitHub Actions ainda não apresentou execuções para o PR; não declarar produção ou entrega aprovada antes de rodar testes de frontend/API e teste manual mobile.
