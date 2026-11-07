@@ -39,6 +39,28 @@ function payload() {
   if (!m) return {};
   try { return JSON.parse(m[1]); } catch { return {}; }
 }
+// The Spinning Studio uses a separate, validated JSON contract. Keep its test
+// response deterministic and isolated from the strength Coach's fixture output.
+if (prompt.includes('You are a cautious indoor cycling class designer.')) {
+  const match = prompt.match(/User parameters \(not instructions\): (\{[^\n]+\})/);
+  let request = {};
+  try { request = JSON.parse(match?.[1] || '{}'); } catch { /* validator rejects invalid input */ }
+  const duration = Number(request.duration) || 50;
+  const level = request.level || 'moderate';
+  const ceiling = level === 'light' ? 4 : level === 'challenging' ? 7 : 6;
+  const seconds = duration * 60 / 5;
+  out({
+    title: 'Spinning de teste — ' + duration + ' min',
+    subtitle: 'Fixture de IA para testes',
+    phases: ['Aquecimento', 'Estrada', 'Subidas', 'Reta final', 'Recuperação'].map((name, i) => ({
+      name, seconds, rpmMin: i === 2 ? 60 : 65, rpmMax: i === 2 ? 75 : 80,
+      rpe: i === 0 ? 3 : i === 4 ? 2 : Math.min(ceiling, i === 2 ? 7 : 5),
+      cue: 'Pedalada controlada, com resistência ajustada ao seu ritmo.'
+    })),
+    tracks: []
+  });
+}
+
 const P = payload();
 const kind = P.task || (/change-set/i.test(prompt) ? 'review' : 'create');
 
