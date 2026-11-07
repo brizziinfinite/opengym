@@ -13,6 +13,13 @@ export default function Heatmap({ S, onDay }) {
     a.n++; a.vol += w.vol || 0
     a.min += Math.max(0, Math.round(((w.end || w.start) - w.start) / 60000))
   })
+  // Spinning minutes count as activity, but never add fictitious strength volume.
+  ;(S.spinning?.history || []).forEach(h => {
+    const key = isoOf(new Date(h.endedAt))
+    const a = agg[key] = agg[key] || { n: 0, vol: 0, min: 0, spin: 0 }
+    a.n++; a.spin = (a.spin || 0) + 1
+    a.min += Math.max(0, Math.round((h.seconds || 0) / 60))
+  })
   const mins = Object.values(agg).map(a => a.min).filter(v => v > 0).sort((a, b) => a - b)
   const q = p => (mins.length ? mins[Math.min(mins.length - 1, Math.floor(p * mins.length))] : 0)
   const t1 = q(0.25), t2 = q(0.5), t3 = q(0.75)
@@ -37,7 +44,7 @@ export default function Heatmap({ S, onDay }) {
       const a = agg[key]
       const cls = 'hm-c l' + level(a) + (key === todayISO() ? ' today' : '') + (day > today ? ' future' : '')
       cells.push(<div key={d} className={cls}
-        title={key + (a ? ` · ${t(a.n === 1 ? '{0} workout' : '{0} workouts', a.n)} · ${a.min} min · ${fmtVol(a.vol, S.unit)}` : '')}
+        title={key + (a ? ` · ${a.n} atividade(s) · ${a.min} min${a.vol ? ' · ' + fmtVol(a.vol, S.unit) : ''}` : '')}
         onClick={a ? () => onDay(key) : undefined} />)
     }
     cols.push(<div key={wk} className="hm-col">{cells}</div>)
