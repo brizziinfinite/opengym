@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store/useStore.js'
 import { api } from '../lib/api.js'
 import { uid } from '../lib/format.js'
-import { GENRES, INTENSITIES, AI_DURATIONS, newTemplate, validateDraft } from '../lib/spinning-builder.js'
+import { GENRES, INTENSITIES, AI_DURATIONS, initialBuilderSettings, newTemplate, validateDraft } from '../lib/spinning-builder.js'
 import { clock } from '../lib/spinning.js'
 import { Button, NumberField, SelectRow, TextField, TextArea, Check } from '../components/ui.jsx'
 
@@ -13,9 +13,9 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
   const update = useStore(s => s.update)
   const user = useStore(s => s.user)
   const config = useStore(s => s.config)
-  const [style, setStyle] = useState(initial?.style || GENRES.find(g => g.preset === initial?.id)?.value || 'mix')
-  const [duration, setDuration] = useState(initial ? initial.phases.reduce((n, p) => n + p.seconds, 0) / 60 : 50)
-  const [level, setLevel] = useState(initial?.level || (initial?.phases?.some(p => p.rpe > 6) ? 'challenging' : 'moderate'))
+  const [style, setStyle] = useState(() => initialBuilderSettings(initial).style)
+  const [duration, setDuration] = useState(() => initialBuilderSettings(initial).duration)
+  const [level, setLevel] = useState(() => initialBuilderSettings(initial).level)
   const [draft, setDraft] = useState(initial ? JSON.parse(JSON.stringify(initial)) : null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
