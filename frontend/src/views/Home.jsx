@@ -117,7 +117,7 @@ export default function Home() {
       <div className="home-hero-stats">
         <div className="home-hero-stat"><strong>{wThisWeek}</strong><span>{t('this week')}</span></div>
         <div className="home-hero-stat"><strong>{plannedPerWeek}</strong><span>{t('Week schedule')}</span></div>
-        <div className="home-hero-stat"><strong>{streakWeeks(S)}</strong><span>{t('week streak')}</span></div>
+        <div className="home-hero-stat"><strong>{streakWeeks(S)}</strong><span>{t('{0} week streak', streakWeeks(S)).replace(String(streakWeeks(S)), '').trim()}</span></div>
       </div>
     </section>
 
