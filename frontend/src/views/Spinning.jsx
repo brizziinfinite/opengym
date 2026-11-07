@@ -8,8 +8,8 @@ import Icon from '../components/Icon.jsx'
 import { SPINNING_CLASSES, durationSeconds, sessionElapsed, phaseAt, clock } from '../lib/spinning.js'
 import SpinningBuilder from './SpinningBuilder.jsx'
 
-// Audio plays in the provider's official app, never in Gyn.
-// The Gyn clock is started manually and does not claim track-accurate synchronization.
+// The professor opens a playlist in the provider's official app. Gyn guides the
+// class independently, without streaming, playback control or track synchronization.
 export default function Spinning() {
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
@@ -81,7 +81,7 @@ export default function Spinning() {
     if (!active || !chosen) return
     confirmSheet({
       title: 'Encerrar aula?',
-      message: 'O tempo pedalado será salvo no histórico. A reprodução no Spotify não será interrompida pelo Gyn.',
+      message: 'O tempo pedalado será salvo no histórico. A reprodução de música externa não é controlada pelo Gyn.',
       confirmText: 'Encerrar e salvar',
       onConfirm: () => {
         update(s => {
@@ -123,18 +123,18 @@ export default function Spinning() {
           <span className="lrow-i"><Icon name="bike" /></span>
           <div className="grow">
             <div className="tt">{c.title}</div>
-            <div className="ss">{c.subtitle} · {clock(durationSeconds(c))} · {c.tracks.length} sugestões de músicas</div>
+            <div className="ss">{c.subtitle} · {clock(durationSeconds(c))} · {c.playlistUrl ? 'Playlist vinculada' : 'Sem playlist vinculada'}</div>
           </div>
           <div className="row" style={{ gap: 6 }}>
-            {c.id.startsWith("spin-") && <Button size="sm" icon="pencil" onClick={() => { setEditing(c); setShowBuilder(true) }} disabled={!!S.active}>Editar</Button>}
+            <Button size="sm" icon="pencil" onClick={() => { setEditing(c); setShowBuilder(true) }} disabled={!!S.active}>{c.id.startsWith('spin-') ? 'Editar' : 'Personalizar'}</Button>
+            {c.playlistUrl && <a className="btn" href={c.playlistUrl} target="_blank" rel="noopener noreferrer" aria-label={'Abrir playlist de ' + c.title}>Playlist <Icon name="link" /></a>}
             <Button size="sm" variant="tinted" icon="play" onClick={() => start(c)} disabled={!!S.active}>Iniciar</Button>
           </div>
         </div>)}</div>
       </div>
       <div className="card">
         <h2>Como funciona</h2>
-        <p className="small muted">1. Abra sua playlist no aplicativo oficial de música. 2. Volte ao Gyn e inicie a aula. 3. Siga as orientações de RPM, esforço e resistência. O relógio é manual; não sincroniza automaticamente com as faixas.</p>
-        <a className="btn" href="https://open.spotify.com/" target="_blank" rel="noopener noreferrer">Abrir Spotify <Icon name="link" /></a>
+        <p className="small muted">1. Vincule a playlist à aula em Personalizar. 2. Toque em Playlist para abrir no Spotify, depois volte ao Gyn. 3. Toque em Iniciar e siga as orientações de RPM, esforço e resistência. O relógio não sincroniza com as faixas. Você também pode iniciar uma aula sem música para testar.</p>
       </div>
     </> : chosen && phase ? <>
       <div className="card" style={{ borderColor: 'var(--acc)' }}>
@@ -182,8 +182,9 @@ export default function Spinning() {
           <Button size="sm" variant="ghost" onClick={() => setShowTracks(v => !v)}>{showTracks ? 'Ocultar' : 'Ver músicas'}</Button>
         </div>
         {showTracks && <div className="list">{chosen.tracks.map(([title, artist], i) => <div className="item" key={i}><span className="small muted">{i + 1}.</span><div className="grow"><div className="tt">{title}</div><div className="ss">{artist}</div></div></div>)}</div>}
-        <div className="small muted" style={{ marginTop: 10 }}>Música tocada em aplicativo externo. O Gyn não controla nem sincroniza o Spotify.</div>
-        <a className="btn" style={{ marginTop: 10 }} href={chosen.playlistUrl || "https://open.spotify.com/"} target="_blank" rel="noopener noreferrer">Abrir playlist externa <Icon name="link" /></a>
+        <div className="small muted" style={{ marginTop: 10 }}>Música tocada no aplicativo oficial do serviço. O Gyn não controla nem sincroniza a reprodução.</div>
+        {chosen.playlistUrl ? <a className="btn" style={{ marginTop: 10 }} href={chosen.playlistUrl} target="_blank" rel="noopener noreferrer">Abrir playlist <Icon name="link" /></a>
+          : <div className="small muted" style={{ marginTop: 8 }}>Esta aula ainda não tem uma playlist vinculada. Encerre a sessão e personalize uma cópia para adicionar o link.</div>}
       </div>}
     </> : <div className="card">Aula não encontrada. Reabra o aplicativo ou atualize o programa.</div>}
 
