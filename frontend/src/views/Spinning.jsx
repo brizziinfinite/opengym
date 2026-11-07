@@ -171,7 +171,7 @@ export default function Spinning() {
         {viewMode === "teacher" && <div style={{ marginTop: 12, padding: 12, background: "var(--surface-2)", borderRadius: 12 }}>
           <div className="small muted" style={{ marginBottom: 6 }}>ORIENTAÇÃO DO PROFESSOR</div>
           <div>{phase.phase.cue}</div>
-          <div style={{ marginTop: 10 }}><Button size="sm" icon="volume" variant={voice ? "tinted" : "plain"} onClick={() => setVoice(v => !v)}>{voice ? "Voz automática ligada" : "Ativar voz nas próximas etapas"}</Button></div>
+          <div style={{ marginTop: 10 }}><Button size="sm" icon="sparkles" variant={voice ? "tinted" : "plain"} onClick={() => setVoice(v => !v)}>{voice ? "Voz automática ligada" : "Ativar voz nas próximas etapas"}</Button></div>
           <div className="small muted" style={{ marginTop: 6 }}>A voz pode interromper o áudio externo em alguns aparelhos; vem desligada por padrão.</div>
         </div>}
         {elapsed >= durationSeconds(chosen) && <p className="small">A sequência terminou. Encerre para registrar a aula.</p>}
