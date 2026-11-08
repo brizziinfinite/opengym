@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useStore } from '../store/useStore.js'
 import { api } from '../lib/api.js'
 import { uid } from '../lib/format.js'
-import { GENRES, INTENSITIES, newTemplate, validateDraft } from '../lib/spinning-builder.js'
+import { GENRES, INTENSITIES, AI_DURATIONS, initialBuilderSettings, newTemplate, validateDraft } from '../lib/spinning-builder.js'
 import { clock } from '../lib/spinning.js'
 import { Button, NumberField, SelectRow, TextField, TextArea, Check } from '../components/ui.jsx'
 
@@ -13,15 +13,20 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
   const update = useStore(s => s.update)
   const user = useStore(s => s.user)
   const config = useStore(s => s.config)
-  const [style, setStyle] = useState(initial?.style || 'mix')
-  const [duration, setDuration] = useState(initial ? initial.phases.reduce((n, p) => n + p.seconds, 0) / 60 : 50)
-  const [level, setLevel] = useState(initial?.level || 'moderate')
+  const [style, setStyle] = useState(() => initialBuilderSettings(initial).style)
+  const [duration, setDuration] = useState(() => initialBuilderSettings(initial).duration)
+  const [level, setLevel] = useState(() => initialBuilderSettings(initial).level)
   const [draft, setDraft] = useState(initial ? JSON.parse(JSON.stringify(initial)) : null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const consent = !!S.spinning?.aiConsent?.agreedAt
   const canAI = !!user && !!config?.coach?.enabled
   const levelCeiling = INTENSITIES.find(x => x.value === level)?.ceiling || 6
+  // Preset programs have real durations (49/53 min), while AI generation accepts
+  // only 30/45/50/60. Keep the source duration editable without submitting an
+  // unsupported duration to the AI API.
+  const durationOptions = AI_DURATIONS.includes(duration) ? AI_DURATIONS : [...AI_DURATIONS, duration].sort((a, b) => a - b)
+  const aiDurationSupported = AI_DURATIONS.includes(duration)
 
   const edit = fn => setDraft(previous => {
     if (!previous) return previous
@@ -38,6 +43,7 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
   async function generateAI() {
     if (!canAI) return setError('A IA não está configurada nesta instalação. Use o modelo editável.')
     if (!consent) return setError('Autorize o uso de IA antes de gerar a aula.')
+    if (!aiDurationSupported) return setError('Para gerar com IA, escolha 30, 45, 50 ou 60 minutos. O modelo manual permite manter a duração original.')
     setBusy(true)
     setError('')
     try {
@@ -79,7 +85,7 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
 
   const changeSettings = (fn, value) => { fn(value); setDraft(null); setError('') }
 
-  return <div className="card">
+  return <div className="card spin-builder" id="spinning-builder">
     <div className="row between" style={{ marginBottom: 12 }}>
       <h2 style={{ margin: 0 }}>{initial?.id?.startsWith('spin-') ? 'Editar aula' : initial ? 'Personalizar aula' : 'Criar aula de spinning'}</h2>
       <Button variant="ghost" size="sm" onClick={onCancel}>Fechar</Button>
@@ -88,7 +94,7 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
       <SelectRow title="Estilo musical" sheetTitle="Escolha o estilo" value={style}
         options={GENRES} onChange={v => changeSettings(setStyle, v)} />
       <SelectRow title="Duração" value={duration} onChange={v => changeSettings(setDuration, v)}
-        options={[30, 45, 50, 60].map(value => ({ value, label: value + ' min' }))} />
+        options={durationOptions.map(value => ({ value, label: value + ' min' }))} />
       <SelectRow title="Intensidade" value={level} onChange={v => changeSettings(setLevel, v)}
         options={INTENSITIES} />
     </div>
@@ -103,7 +109,8 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
         })} />
         <div className="small muted">Autorizo enviar à IA somente duração, estilo e intensidade para sugerir um roteiro. Posso revogar aqui. Não são enviados dados de saúde nem histórico dos alunos.</div>
       </div>
-      <Button variant="primary" icon="sparkles" disabled={busy || !consent} onClick={generateAI}>
+      {!aiDurationSupported && <div className="small muted" style={{ marginBottom: 7 }}>IA disponível para 30, 45, 50 ou 60 minutos. Personalização manual mantém os {duration} minutos.</div>}
+      <Button variant="primary" icon="sparkles" disabled={busy || !consent || !aiDurationSupported} onClick={generateAI}>
         {busy ? 'Gerando sugestão…' : 'Criar roteiro com IA'}
       </Button>
     </>}

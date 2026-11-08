@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { GENRES, INTENSITIES, newTemplate, validateDraft } from './spinning-builder.js'
-import { durationSeconds } from './spinning.js'
+import { GENRES, INTENSITIES, AI_DURATIONS, initialBuilderSettings, newTemplate, validateDraft } from './spinning-builder.js'
+import { durationSeconds, SPINNING_CLASSES } from './spinning.js'
 
 describe('Spinning teacher builder', () => {
   it('creates valid offline drafts at every duration and intensity', () => {
@@ -14,6 +14,22 @@ describe('Spinning teacher builder', () => {
         }
       }
     }
+  })
+
+  it('preserves built-in real duration, music style and appropriate level when personalizing', () => {
+    const styles = new Map(GENRES.map(x => [x.preset, x.value]))
+    for (const preset of SPINNING_CLASSES) {
+      const defaults = initialBuilderSettings(preset)
+      expect(defaults.duration * 60).toBe(durationSeconds(preset))
+      expect(defaults.style).toBe(styles.get(preset.id))
+      const ceiling = INTENSITIES.find(x => x.value === defaults.level).ceiling
+      expect(preset.phases.every(p => p.rpe <= ceiling)).toBe(true)
+      expect(validateDraft(preset, defaults.duration)).toEqual([])
+    }
+    expect(initialBuilderSettings(null)).toEqual({ style: 'mix', duration: 50, level: 'moderate' })
+    expect(AI_DURATIONS).toEqual([30, 45, 50, 60])
+    expect(AI_DURATIONS.includes(53)).toBe(false)
+    expect(AI_DURATIONS.includes(49)).toBe(false)
   })
 
   it('requires exact summed duration', () => {
