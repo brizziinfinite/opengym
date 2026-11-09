@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useStore } from '../store/useStore.js'
 import { beep, vibrate } from '../lib/sound.js'
 import { uid } from '../lib/format.js'
@@ -12,6 +12,7 @@ import SpinningBuilder from './SpinningBuilder.jsx'
 // No OAuth or streaming: a class-specific official playlist link opens in the
 // provider's app, while Gyn continues timing the class independently.
 function PlaylistQuickConnect({ url, onSave }) {
+  const inputId = useId()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(url || '')
   const [error, setError] = useState('')
@@ -39,8 +40,8 @@ function PlaylistQuickConnect({ url, onSave }) {
       setEditing(v => !v)
     }}>{provider ? 'Trocar playlist' : 'Conectar playlist'}</Button>
     {editing && <form className="spin-playlist-edit" onSubmit={save}>
-      <label className="small muted" htmlFor="spin-playlist-url">Cole o link da playlist</label>
-      <TextField id="spin-playlist-url" type="url" inputMode="url" autoComplete="url"
+      <label className="small muted" htmlFor={inputId}>Cole o link da playlist</label>
+      <TextField id={inputId} type="url" inputMode="url" autoComplete="url"
         placeholder="https://open.spotify.com/playlist/..." value={draft}
         onChange={e => { setDraft(e.target.value); setError('') }} />
       {error && <div className="small" role="alert" style={{ color: 'var(--red)' }}>{error}</div>}
