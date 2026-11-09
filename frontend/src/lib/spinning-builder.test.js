@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { GENRES, INTENSITIES, AI_DURATIONS, initialBuilderSettings, newTemplate, validateDraft } from './spinning-builder.js'
+import { GENRES, INTENSITIES, AI_DURATIONS, initialBuilderSettings, newTemplate, playlistProvider, validateDraft } from './spinning-builder.js'
 import { durationSeconds, SPINNING_CLASSES } from './spinning.js'
 
 describe('Spinning teacher builder', () => {
@@ -49,4 +49,20 @@ describe('Spinning teacher builder', () => {
     draft.playlistUrl = 'https://evil.example/playlist'
     expect(validateDraft(draft, 50).length).toBeGreaterThan(0)
   })
+  it('recognizes only official external playlist URLs, not arbitrary external links', () => {
+    expect(playlistProvider('https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M?si=abc')).toBe('Spotify')
+    expect(playlistProvider('https://music.apple.com/br/playlist/minha-lista/pl.123')).toBe('Apple Music')
+    for (const url of [
+      'https://open.spotify.com/',
+      'https://open.spotify.com/track/123',
+      'https://open.spotify.com.evil.tld/playlist/123',
+      'https://music.apple.com/br/album/123',
+      'http://open.spotify.com/playlist/123',
+      'javascript:alert(1)',
+      'https://user:pass@open.spotify.com/playlist/123',
+      'https://evil.example/playlist/123',
+      'not a url'
+    ]) expect(playlistProvider(url)).toBeNull()
+  })
+
 })
