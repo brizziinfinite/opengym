@@ -3,13 +3,55 @@ import { useStore } from '../store/useStore.js'
 import { beep, vibrate } from '../lib/sound.js'
 import { uid } from '../lib/format.js'
 import { confirmSheet } from '../sheets.jsx'
-import { Button } from '../components/ui.jsx'
+import { Button, TextField } from '../components/ui.jsx'
 import Icon from '../components/Icon.jsx'
 import { SPINNING_CLASSES, durationSeconds, sessionElapsed, phaseAt, clock } from '../lib/spinning.js'
+import { playlistProvider } from '../lib/spinning-builder.js'
 import SpinningBuilder from './SpinningBuilder.jsx'
 
-// The professor opens a playlist in the provider's official app. Gyn guides the
-// class independently, without streaming, playback control or track synchronization.
+// No OAuth or streaming: a class-specific official playlist link opens in the
+// provider's app, while Gyn continues timing the class independently.
+function PlaylistQuickConnect({ url, onSave }) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(url || '')
+  const [error, setError] = useState('')
+  const provider = playlistProvider(url)
+
+  function save(e) {
+    e.preventDefault()
+    const next = draft.trim()
+    if (!playlistProvider(next)) {
+      setError('Cole um link de playlist do Spotify ou Apple Music.')
+      return
+    }
+    onSave(next)
+    setEditing(false)
+    setError('')
+  }
+
+  return <div className={'spin-playlist-connect' + (editing ? ' editing' : '')}>
+    {provider && <a className="btn spin-playlist-open" href={url} target="_blank" rel="noopener noreferrer" aria-label={'Abrir playlist no ' + provider}>
+      <Icon name="link" /> Abrir no {provider}
+    </a>}
+    <Button size="sm" variant={provider ? 'plain' : 'tinted'} icon="link" onClick={() => {
+      setDraft(url || '')
+      setError('')
+      setEditing(v => !v)
+    }}>{provider ? 'Trocar playlist' : 'Conectar playlist'}</Button>
+    {editing && <form className="spin-playlist-edit" onSubmit={save}>
+      <label className="small muted" htmlFor="spin-playlist-url">Cole o link da playlist</label>
+      <TextField id="spin-playlist-url" type="url" inputMode="url" autoComplete="url"
+        placeholder="https://open.spotify.com/playlist/..." value={draft}
+        onChange={e => { setDraft(e.target.value); setError('') }} />
+      {error && <div className="small" role="alert" style={{ color: 'var(--red)' }}>{error}</div>}
+      <div className="spin-playlist-edit-actions">
+        <button className="btn" type="button" onClick={() => { setEditing(false); setError('') }}>Cancelar</button>
+        <button className="btn primary" type="submit">Salvar playlist</button>
+      </div>
+    </form>}
+  </div>
+}
+
 export default function Spinning() {
   const S = useStore(s => s.S)
   const update = useStore(s => s.update)
@@ -26,6 +68,12 @@ export default function Spinning() {
   const elapsed = active ? sessionElapsed(active, now) : 0
   const phase = chosen ? phaseAt(chosen, elapsed) : null
   const prevPhase = useRef(null)
+  const playlistFor = c => spin.playlists?.[c.id] ?? c.playlistUrl ?? ''
+  const savePlaylist = (classId, url) => update(s => {
+    if (!s.spinning) s.spinning = { active: null, history: [] }
+    if (!s.spinning.playlists) s.spinning.playlists = {}
+    s.spinning.playlists[classId] = url
+  })
 
   useEffect(() => {
     if (!showBuilder) return
@@ -148,18 +196,16 @@ export default function Spinning() {
         <div className="spin-phase-strip" aria-hidden="true">{c.phases.map((p, i) =>
           <span key={i} style={{ flex: p.seconds }} />)}
         </div>
-        <div className="spin-card-note">{c.playlistUrl ? 'Playlist pronta para abrir no Spotify' : 'Adicione sua playlist em Personalizar'}</div>
+        <div className="spin-card-note">{playlistProvider(playlistFor(c)) ? 'Playlist pronta para abrir no aplicativo de música' : 'Conecte uma playlist sem editar a aula'}</div>
         <div className="spin-card-actions">
           <Button size="sm" icon="pencil" onClick={() => { setEditing(c); setShowBuilder(true) }} disabled={!!S.active}>{c.id.startsWith('spin-') ? 'Editar' : 'Personalizar'}</Button>
-          {c.playlistUrl
-            ? <a className="btn sm spin-playlist-button" href={c.playlistUrl} target="_blank" rel="noopener noreferrer" aria-label={'Abrir playlist de ' + c.title}><Icon name="link" /> Spotify</a>
-            : <Button size="sm" icon="link" disabled>Sem playlist</Button>}
+          <PlaylistQuickConnect key={c.id} url={playlistFor(c)} onSave={url => savePlaylist(c.id, url)} />
           <div className="spin-card-play"><Button variant="primary" icon="play" onClick={() => start(c)} disabled={!!S.active}>Iniciar aula</Button></div>
         </div>
       </article>)}</div>
       <div className="card" style={{ marginTop: 16 }}>
         <h2>Como funciona</h2>
-        <p className="small muted">A playlist abre no aplicativo oficial do Spotify. Volte ao Gyn e toque em Iniciar aula. Cronômetro e orientações funcionam separadamente, sem sincronizar as faixas ou controlar o áudio externo.</p>
+        <p className="small muted">Conecte o link de uma playlist do Spotify ou Apple Music, abra no aplicativo oficial e volte ao Gyn. Também é possível conectá-la durante a aula. A música não é controlada nem sincronizada pelo Gyn.</p>
       </div>
     </> : chosen && phase ? <>
       <section className="card spin-player-card" aria-label="Cronômetro da aula">
@@ -180,6 +226,10 @@ export default function Spinning() {
           <Button variant="primary" icon={active.running ? 'pause' : 'play'} onClick={togglePause}>{active.running ? 'Pausar' : 'Continuar'}</Button>
           <Button icon="check" onClick={finish}>Encerrar</Button>
         </div>
+      </section>
+      <section className="card spin-active-music" aria-label="Playlist da aula">
+        <div className="spin-active-music-heading"><Icon name="link" /><div><strong>Música da aula</strong><div className="small muted">Spotify externo · sem interromper o cronômetro</div></div></div>
+        <PlaylistQuickConnect key={chosen.id} url={playlistFor(chosen)} onSave={url => savePlaylist(chosen.id, url)} />
       </section>
       <div className="card">
         <div className="row between" style={{ marginBottom: 10 }}>
@@ -221,8 +271,7 @@ export default function Spinning() {
         </div>
         {showTracks && <div className="list">{chosen.tracks.map(([title, artist], i) => <div className="item" key={i}><span className="small muted">{i + 1}.</span><div className="grow"><div className="tt">{title}</div><div className="ss">{artist}</div></div></div>)}</div>}
         <div className="small muted" style={{ marginTop: 10 }}>Música tocada no aplicativo oficial do serviço. O Gyn não controla nem sincroniza a reprodução.</div>
-        {chosen.playlistUrl ? <a className="btn" style={{ marginTop: 10 }} href={chosen.playlistUrl} target="_blank" rel="noopener noreferrer">Abrir playlist <Icon name="link" /></a>
-          : <div className="small muted" style={{ marginTop: 8 }}>Esta aula ainda não tem uma playlist vinculada. Encerre a sessão e personalize uma cópia para adicionar o link.</div>}
+        <div className="small muted" style={{ marginTop: 8 }}>Use “Música da aula”, acima, para abrir ou trocar a playlist sem encerrar sua sessão.</div>
       </div>}
     </> : <div className="card">Aula não encontrada. Reabra o aplicativo ou atualize o programa.</div>}
 
