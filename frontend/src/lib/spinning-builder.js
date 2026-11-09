@@ -51,8 +51,12 @@ export function playlistProvider(value) {
   try {
     const u = new URL(value.trim())
     if (u.protocol !== 'https:' || u.username || u.password) return null
-    if (u.hostname === 'open.spotify.com' && /^\\/playlist\\/[a-zA-Z0-9]+\\/?$/.test(u.pathname)) return 'Spotify'
-    if (u.hostname === 'music.apple.com' && /^\\/(?:[a-z]{2}\\/)?playlist\\/[^/]+\\/[^/]+\\/?$/i.test(u.pathname)) return 'Apple Music'
+    const parts = u.pathname.split('/').filter(Boolean)
+    if (u.hostname === 'open.spotify.com' && parts.length === 2 && parts[0] === 'playlist' && /^[a-zA-Z0-9]+$/.test(parts[1])) return 'Spotify'
+    if (u.hostname === 'music.apple.com' && (
+      (parts.length === 3 && /^[a-z]{2}$/i.test(parts[0]) && parts[1] === 'playlist') ||
+      (parts.length === 2 && parts[0] === 'playlist')
+    )) return 'Apple Music'
   } catch { /* invalid URL */ }
   return null
 }
