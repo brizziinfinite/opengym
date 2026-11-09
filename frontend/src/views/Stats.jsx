@@ -146,6 +146,8 @@ export default function Stats() {
   const bw30 = S.bodyweight.filter(b => (b.t || new Date(b.d).getTime()) > now - 30 * 86400000)
   const bwDelta30 = bw30.length > 1 ? bw30[bw30.length - 1].w - bw30[0].w : null
   const monthW = S.workouts.filter(w => w.d.slice(0, 7) === todayISO().slice(0, 7)).length
+  const spinHistory = S.spinning?.history || []
+  const spinSeconds = spinHistory.reduce((n, h) => n + (h.seconds || 0), 0)
 
   const exHist = [...new Set(S.workouts.flatMap(w => w.entries.map(e => e.id)))].filter(id => EXIDX[id]).sort((a, b) => nameOf(EXIDX[a]).localeCompare(nameOf(EXIDX[b])))
   const curEx = exId && exHist.includes(exId) ? exId : exHist[0] || null
@@ -206,8 +208,23 @@ export default function Stats() {
     </div>
 
     <div className="card">
+      <div className="row between" style={{ marginBottom: 8 }}>
+        <h2 style={{ margin: 0 }}>Spinning Studio</h2>
+        <Button size="sm" icon="bike" onClick={() => nav('/spinning')}>Abrir aulas</Button>
+      </div>
+      <div className="tiles" style={{ marginBottom: 12 }}>
+        <div className="tile"><div className="l">Aulas concluídas</div><div className="v">{spinHistory.length}</div></div>
+        <div className="tile"><div className="l">Tempo pedalado</div><div className="v">{Math.round(spinSeconds / 60)} <span className="small">min</span></div></div>
+      </div>
+      {spinHistory.slice(0, 3).map(h => <div key={h.id} className="row between small" style={{ padding: '7px 0', borderBottom: 'var(--hair) solid var(--sep)' }}>
+        <span>{h.title}</span><span className="muted">{new Date(h.endedAt).toLocaleDateString('pt-BR')} · {Math.round(h.seconds / 60)} min</span>
+      </div>)}
+      <div className="small muted" style={{ marginTop: 10 }}>Spinning e musculação são registrados separadamente para não distorcer métricas de força.</div>
+    </div>
+
+    <div className="card">
       <h2>{t('Activity — last 12 months')} <span className="dim" style={{ textTransform: 'none', letterSpacing: 0 }}>· {t('by time trained')}</span></h2>
-      <Heatmap S={S} onDay={iso => { const ws = S.workouts.filter(w => w.d === iso); if (ws.length === 1) workoutDetailSheet(ws[0]); else if (ws.length) calendarSheet(iso) }} />
+      <Heatmap S={S} onDay={iso => { const ws = S.workouts.filter(w => w.d === iso); if (ws.length === 1) workoutDetailSheet(ws[0]); else if (ws.length) calendarSheet(iso); else nav('/spinning') }} />
     </div>
 
     {S.workouts.length > 0 && <MuscleBalance S={S} />}

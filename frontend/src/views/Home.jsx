@@ -49,7 +49,7 @@ export default function Home() {
   const [weekOffset, setWeekOffset] = useState(0)
   const coachOn = coachAvailable(config, user, { demo: DEMO, mobile: MOBILE })
   // First run: nothing planned, nothing logged, never answered the profile → ask it first.
-  const fresh = !S.profile && !S.routines.length && !S.workouts.length && !S.active
+  const fresh = !S.profile && !S.routines.length && !S.workouts.length && !S.active && !S.spinning?.active && !(S.spinning?.history || []).length
   useEffect(() => { if (fresh && !DEMO) nav('/welcome', { replace: true }) }, [fresh, nav])
 
   const today = new Date()
@@ -78,7 +78,16 @@ export default function Home() {
   const bwPoints = S.bodyweight.slice(-30).map(b => ({ t: b.t || new Date(b.d).getTime(), y: b.w, d: b.d }))
 
   // today's session shown right under the week strip
-  const onToday = () => { if (S.active) nav('/workout'); else if (routine) startFlow(routine.id); else dayOverrideSheet(todayISO()) }
+  const spinActive = !!S.spinning?.active
+  const onToday = () => {
+    if (spinActive) { nav('/spinning'); return }
+    if (S.active) { nav('/workout'); return }
+    if (routine) { startFlow(routine.id); return }
+    dayOverrideSheet(todayISO())
+  }
+  const focusTitle = spinActive ? 'Spinning Studio' : S.active?.name || routine?.name || t('Rest day')
+  const focusSubtitle = spinActive ? 'Aula de spinning em andamento' : S.active ? t('Resume') : routine ? t('Your weekly routine') : t('This week')
+  const focusIcon = spinActive ? 'bike' : S.active ? 'timer' : routine ? glyphOf(routine.emoji) : 'moon'
 
   return <div className="narrow">
     <div className="hdr">
@@ -86,7 +95,33 @@ export default function Home() {
       <button className="iconbtn" onClick={() => nav('/settings')} aria-label={t('Settings')}><Icon name="gear" /></button>
     </div>
 
-    <div className="card">
+    <section className="home-hero" aria-label={t('Today')}>
+      <div className="home-hero-top">
+        <span className="home-hero-eyebrow"><span className="home-hero-dot" /> LEVANTA</span>
+        <span className="home-hero-submark">{t('This week')}</span>
+      </div>
+      <div className="home-hero-main">
+        <div>
+          <div className="home-hero-kicker">{t('Today')}</div>
+          <h2>{focusTitle}</h2>
+          <p className="home-hero-desc">{focusSubtitle}</p>
+        </div>
+        <div className="home-hero-emblem" aria-hidden="true"><Icon name={focusIcon} /></div>
+      </div>
+      <div className="home-hero-actions">
+        <button type="button" className="home-hero-start" onClick={onToday}>
+          <Icon name={S.active || spinActive ? 'play' : routine ? 'play' : 'calendar'} />
+          {S.active || spinActive ? t('Resume') : routine ? t('Start') : t('Plan')}
+        </button>
+      </div>
+      <div className="home-hero-stats">
+        <div className="home-hero-stat"><strong>{wThisWeek}</strong><span>{t('this week')}</span></div>
+        <div className="home-hero-stat"><strong>{plannedPerWeek}</strong><span>{t('Week schedule')}</span></div>
+        <div className="home-hero-stat"><strong>{streakWeeks(S)}</strong><span>{t('{0} week streak', streakWeeks(S)).replace(String(streakWeeks(S)), '').trim()}</span></div>
+      </div>
+    </section>
+
+    <div className="card home-week-card">
       <div className="row between" style={{ marginBottom: 8 }}>
         <button className="iconbtn" style={{ width: 30, height: 30, fontSize: 15 }} onClick={() => setWeekOffset(w => w - 1)} aria-label="Previous week"><Icon name="chevronLeft" /></button>
         <div className="small muted" style={{ fontWeight: 500 }}>{wkLabel}</div>
@@ -126,6 +161,16 @@ export default function Home() {
     )}
 
     <ProgressCards />
+
+    <button type="button" className="home-spin-feature" onClick={() => nav('/spinning')} aria-label="Abrir Spinning Studio">
+      <span className="home-spin-icon"><Icon name="bike" /></span>
+      <span className="home-spin-content">
+        <span className="home-spin-eyebrow">SPINNING STUDIO</span>
+        <span className="home-spin-title">Seu ritmo. Sua aula.</span>
+        <span className="home-spin-detail">Roteiros guiados, IA e playlist externa do professor</span>
+      </span>
+      <Icon name="chevronRight" className="home-spin-arrow" />
+    </button>
 
     {!S.routines.length && !S.active && (
       <div className="card">

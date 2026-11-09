@@ -23,6 +23,11 @@ COPY server.js ./
 COPY db/ ./db/
 COPY coach/ ./coach/
 COPY wa/ ./wa/
+COPY spinning/ ./spinning/
+# Verify that the production image actually contains the Spinning AI route and
+# every static import it needs. Merely building server.js would not detect a
+# missing COPY, because the import is resolved only when Node starts.
+RUN node --input-type=module -e "const m = await import('./spinning/routes.js'); if (typeof m.spinningRoutes !== 'function') process.exit(1); console.log('Spinning route packaged')"
 ENV NODE_ENV=production
 EXPOSE 3000
 CMD ["node", "server.js"]

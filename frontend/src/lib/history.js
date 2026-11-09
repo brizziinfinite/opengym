@@ -195,8 +195,9 @@ export function supersetUnits(items) {
 export function unitOf(units, idx) { return units.find(u => u.includes(idx)) || [idx] }
 
 export function streakWeeks(S) {
-  if (!S.workouts.length) return 0
-  const weeks = new Set(S.workouts.map(w => weekKey(w.d)))
+  const spinDates = (S.spinning?.history || []).map(h => isoOf(new Date(h.endedAt)))
+  if (!S.workouts.length && !spinDates.length) return 0
+  const weeks = new Set([...S.workouts.map(w => weekKey(w.d)), ...spinDates.map(d => weekKey(d))])
   let streak = 0
   const cur = new Date()
   for (let i = 0; i < 520; i++) {

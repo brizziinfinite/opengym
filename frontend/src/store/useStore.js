@@ -11,6 +11,7 @@ export const DEF = {
   unit: 'kg', restSec: 90, sound: true, keepAwake: true, lang: browserLang(),
   theme: 'dark', accent: 'lime', body: 'male', targetW: null,
   bodyweight: [], routines: [], week: {}, dayPlan: {},
+  spinning: { active: null, history: [], classes: [], aiConsent: null },
   exWeights: {}, workouts: [], active: null, customEx: [], gifSize: 'full',
   // effort: which per-set effort scale is logged — 'none' | 'rir' | 'rpe'. null, not 'none', so
   // that a profile which never chose (loaded state is overlaid on DEF, on every path: local,
@@ -35,7 +36,7 @@ function loadState() {
   return clone(DEF)
 }
 
-const hasData = st => !!((st.workouts || []).length || (st.routines || []).length || (st.bodyweight || []).length)
+const hasData = st => !!((st.workouts || []).length || (st.routines || []).length || (st.bodyweight || []).length || (st.spinning?.history || []).length || !!st.spinning?.active)
 
 export const useStore = create((set, get) => {
   let pushTm = null
@@ -128,6 +129,7 @@ export const useStore = create((set, get) => {
           const active = S.active
           const next = Object.assign(clone(DEF), state)
           if (active) next.active = active
+          if (S.spinning?.active) next.spinning = { ...next.spinning, active: S.spinning.active }
           persist(next, false)
         } else if (hasData(S)) { await get().pushState() }
       } catch (e) { /* offline — keep local */ }
