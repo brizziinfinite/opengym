@@ -44,6 +44,19 @@ export function newTemplate(genre, durationMin, level) {
   }
 }
 
+// Only official HTTPS playlist URLs can be persisted and opened outside Gyn.
+// This prevents a pasted URL from becoming an arbitrary external destination.
+export function playlistProvider(value) {
+  if (!value || typeof value !== 'string' || value.length > 2048) return null
+  try {
+    const u = new URL(value.trim())
+    if (u.protocol !== 'https:' || u.username || u.password) return null
+    if (u.hostname === 'open.spotify.com' && /^\\/playlist\\/[a-zA-Z0-9]+\\/?$/.test(u.pathname)) return 'Spotify'
+    if (u.hostname === 'music.apple.com' && /^\\/(?:[a-z]{2}\\/)?playlist\\/[^/]+\\/[^/]+\\/?$/i.test(u.pathname)) return 'Apple Music'
+  } catch { /* invalid URL */ }
+  return null
+}
+
 export function validateDraft(c, targetMin) {
   const errors = []
   if (!c || typeof c.title !== 'string' || !c.title.trim()) errors.push('Informe o nome da aula.')
@@ -58,11 +71,6 @@ export function validateDraft(c, targetMin) {
     if (!Number.isInteger(p.rpe) || p.rpe < 2 || p.rpe > 8) errors.push('Esforço deve ficar de 2 a 8.')
     if (!p.name?.trim() || !p.cue?.trim()) errors.push('Todas as etapas precisam de nome e orientação.')
   }
-  if (c?.playlistUrl) {
-    try {
-      const u = new URL(c.playlistUrl)
-      if (u.protocol !== 'https:' || !['open.spotify.com','music.apple.com'].includes(u.hostname)) errors.push('Use uma URL HTTPS de playlist Spotify ou Apple Music.')
-    } catch { errors.push('URL de playlist inválida.') }
-  }
+  if (c?.playlistUrl && !playlistProvider(c.playlistUrl)) errors.push('Use um link de playlist do Spotify ou Apple Music.')
   return [...new Set(errors)]
 }
