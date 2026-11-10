@@ -4,6 +4,7 @@ import { api } from '../lib/api.js'
 import { uid } from '../lib/format.js'
 import { GENRES, INTENSITIES, AI_DURATIONS, initialBuilderSettings, newTemplate, validateDraft } from '../lib/spinning-builder.js'
 import { clock } from '../lib/spinning.js'
+import { SPINNING_VISUALS, visualForPhase } from '../lib/spinning-visual.js'
 import { Button, NumberField, SelectRow, TextField, TextArea, Check } from '../components/ui.jsx'
 
 // Drafts remain local until the teacher approves them. The provider receives only
@@ -146,6 +147,10 @@ export default function SpinningBuilder({ initial = null, onSaved, onCancel }) {
               onChange={v => edit(c => { c.phases[index].rpm = (parts[0] || 65) + '–' + Math.round(v) })} /></label>
             <label className="small muted">RPE <NumberField decimal={false} value={p.rpe}
               onChange={v => edit(c => { c.phases[index].rpe = Math.round(v) })} /></label>
+          </div>
+          <div className="sect-b" style={{ marginTop: 10 }}>
+            <SelectRow title="Imagem e postura da etapa" sheetTitle="Orientação visual" value={p.visualKey || visualForPhase(p).value}
+              options={SPINNING_VISUALS} onChange={value => edit(c => { c.phases[index].visualKey = value })} />
           </div>
           <div className="small muted" style={{ margin: '9px 0 6px' }}>Comando do professor</div>
           <TextArea rows={2} value={p.cue} maxLength={250}
