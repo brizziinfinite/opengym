@@ -32,6 +32,15 @@ describe('Spinning teacher builder', () => {
     expect(AI_DURATIONS.includes(49)).toBe(false)
   })
 
+  it('accepts an optional visual posture and rejects unknown identifiers', () => {
+    const draft = newTemplate('mix', 50, 'moderate')
+    expect(validateDraft(draft, 50)).toEqual([])
+    draft.phases[0].visualKey = 'warmup-seated'
+    expect(validateDraft(draft, 50)).toEqual([])
+    draft.phases[0].visualKey = 'unknown-position'
+    expect(validateDraft(draft, 50).some(message => message.includes('postura visual'))).toBe(true)
+  })
+
   it('requires exact summed duration', () => {
     const draft = newTemplate('mix', 50, 'moderate')
     draft.phases[0].seconds += 60
