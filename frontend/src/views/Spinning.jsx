@@ -227,7 +227,7 @@ export default function Spinning() {
         <SpinningIllustration stage={phase.phase} />
         <div className="spin-visual-bottom">
           <span><Icon name="clock" /> {nextStage ? 'Próxima em ' + clock(phase.remaining) : 'Última etapa'}</span>
-          <span><Icon name="music" /> {suggestedSong ? 'Referência ' + (suggestedSong.index + 1) + '/' + songPlan.length : 'Roteiro por etapas'}</span>
+          <span><Icon name="link" /> {suggestedSong ? 'Referência ' + (suggestedSong.index + 1) + '/' + songPlan.length : 'Roteiro por etapas'}</span>
         </div>
       </section>
 
