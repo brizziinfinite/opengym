@@ -207,7 +207,7 @@ export default function Spinning() {
         </div>
         <div className="spin-card-note">{playlistProvider(playlistFor(c)) ? 'Playlist pronta para abrir no aplicativo de música' : 'Conecte uma playlist sem editar a aula'}</div>
         <div className="spin-card-actions">
-          <Button size="sm" icon="pencil" onClick={() => { setEditing(c); setShowBuilder(true) }} disabled={!!S.active}>{c.id.startsWith('spin-') ? 'Editar' : 'Personalizar'}</Button>
+          <Button size="sm" icon="pencil" onClick={() => { setEditing({ ...c, playlistUrl: playlistFor(c) }); setShowBuilder(true) }} disabled={!!S.active}>{c.id.startsWith('spin-') ? 'Editar' : 'Personalizar'}</Button>
           <PlaylistQuickConnect key={c.id} url={playlistFor(c)} onSave={url => savePlaylist(c.id, url)} />
           <div className="spin-card-play"><Button variant="primary" icon="play" onClick={() => start(c)} disabled={!!S.active}>Iniciar aula</Button></div>
         </div>
