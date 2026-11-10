@@ -1212,3 +1212,102 @@ body {
 @media (prefers-reduced-motion:reduce) {
   .home-hero-start:active,.home-spin-feature:active { transform:none; }
 }
+
+
+/* Spinning Studio 2.0 — visual stage coaching. Original SVG illustrations are
+   offline, crisp on mobile and derived from the class's own instructions. */
+.spin-visual-hero {
+  position:relative; isolation:isolate; overflow:hidden; border-radius:25px;
+  padding:19px 20px 0; margin:10px 0 12px; color:#f3fff9;
+  background:radial-gradient(ellipse at 75% 44%,rgba(34,229,139,.28),transparent 58%),
+    linear-gradient(140deg,#102b32 0%,#071b27 53%,#06252b 100%);
+  border:1px solid rgba(122,242,185,.3);
+  box-shadow:0 13px 40px rgba(0,15,22,.18), inset 0 1px rgba(255,255,255,.12);
+}
+.spin-visual-headline {display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.spin-visual-now {display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(89,248,155,.28);
+  background:rgba(39,224,127,.16);color:#71ffc0;padding:6px 10px;border-radius:999px;
+  font-size:10px;font-weight:800;letter-spacing:.11em;}
+.spin-visual-now span {font-size:12px;}
+.spin-visual-status {color:rgba(221,250,239,.7);font-size:11px;}
+.spin-visual-hero h2 {font-size:clamp(26px,7vw,38px);line-height:1.05;letter-spacing:-.047em;
+  max-width:300px;margin:17px 0 6px;font-weight:790;color:#fff;}
+.spin-visual-hero > p {color:rgba(213,247,232,.8);font-size:13px;margin:0;}
+.spin-illustration {display:block;width:100%;height:100%;max-height:240px;overflow:visible;pointer-events:none;}
+.spin-visual-hero > .spin-illustration {height:clamp(155px,43vw,220px);margin:-1px auto -8px;}
+.spin-visual-bottom {border-top:1px solid rgba(147,243,200,.19);padding:12px 0 14px;
+  display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-size:12px;color:#eafbf6;}
+.spin-visual-bottom span {display:inline-flex;align-items:center;gap:7px;}
+.spin-visual-bottom .icn {font-size:15px;color:#80ebc2;}
+.spin-visual-controls {padding:16px;margin-bottom:12px;}
+.spin-visual-progress-head {display:flex;justify-content:space-between;align-items:center;gap:8px;
+  font-size:12px;color:var(--label-2);}
+.spin-visual-progress-head strong {font-size:16px;font-variant-numeric:tabular-nums;color:var(--label);}
+.spin-visual-progress {margin:11px 0 14px;height:6px;border-radius:99px;overflow:hidden;
+  background:var(--surface-3);border:1px solid var(--glass-outline);}
+.spin-visual-progress > div {height:100%;border-radius:99px;
+  background:linear-gradient(90deg,#138c62,var(--acc));transition:width .25s linear;}
+.spin-visual-metrics {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:12px;}
+.spin-visual-metric {min-width:0;padding:14px 13px 12px;border:1px solid var(--glass-outline);
+  background:var(--glass-raised);border-radius:18px;display:flex;flex-direction:column;gap:7px;}
+.spin-visual-metric > span {font-size:11px;line-height:1.25;color:var(--label-2);}
+.spin-visual-metric > strong {font-size:clamp(23px,5vw,30px);font-weight:750;line-height:1.05;
+  letter-spacing:-.04em;font-variant-numeric:tabular-nums;color:var(--label);}
+.spin-visual-metric > strong small {font-size:14px;color:var(--label-2);}
+.spin-visual-metric > strong.spin-visual-word {font-size:clamp(17px,4.5vw,22px);letter-spacing:-.035em;line-height:1.15;}
+.spin-visual-metric > small {font-size:11px;color:var(--label-2);}
+.spin-visual-cue {margin-bottom:12px;border-radius:19px;padding:17px;}
+.spin-visual-cue-header {display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:7px;}
+.spin-visual-mode {display:flex;gap:4px;}
+.spin-visual-mode .btn {min-height:36px;font-size:12px;padding:7px 9px;}
+.spin-visual-cue > p {margin:10px 0;font-size:15px;line-height:1.45;}
+.spin-visual-cue > p.small {font-size:11px;}
+.spin-visual-next {display:flex;align-items:center;gap:11px;padding:10px 12px;
+  margin:0 0 13px;border:1px solid var(--glass-outline);background:var(--glass-raised);
+  border-radius:19px;min-height:100px;overflow:hidden;}
+.spin-visual-next > .spin-illustration {flex:0 0 90px;width:90px;height:80px;
+  background:radial-gradient(circle at 65% 45%,rgba(46,232,155,.14),transparent 80%),#102932;
+  border-radius:13px;overflow:hidden;}
+.spin-visual-next-text {min-width:0;display:flex;flex:1;flex-direction:column;gap:4px;}
+.spin-visual-next-text span {font-size:10px;letter-spacing:.1em;color:var(--acc);font-weight:800;}
+.spin-visual-next-text strong {font-size:16px;line-height:1.18;overflow-wrap:anywhere;}
+.spin-visual-next-text small {font-size:11px;line-height:1.3;color:var(--label-2);}
+.spin-visual-next > .icn {color:var(--label-2);}
+.spin-visual-roadmap {margin:0 0 14px;}
+.spin-visual-roadmap-head {display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.spin-visual-roadmap-head h2 {font-size:18px;margin:0 0 3px;}
+.spin-visual-roadmap-head .small {margin:0;}
+.spin-visual-roadmap-head .btn {flex:none;}
+.spin-visual-tabs {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+  padding:5px;background:var(--glass-raised);border-radius:15px;margin:16px 0 12px;}
+.spin-visual-tabs .btn {min-width:0;width:100%;font-size:13px;min-height:41px;}
+.spin-visual-disclaimer {background:var(--acc-soft);border:1px solid var(--acc-line);
+  border-radius:12px;padding:11px;line-height:1.4;}
+.spin-visual-roadmap-list {display:flex;flex-direction:column;gap:9px;margin-top:10px;}
+.spin-visual-roadmap-row {display:flex;align-items:center;gap:10px;padding:9px;
+  border-radius:15px;background:var(--glass-raised);border:1px solid var(--glass-outline);min-width:0;}
+.spin-visual-roadmap-row.is-current {border-color:var(--acc);background:var(--acc-soft);}
+.spin-visual-roadmap-row > .spin-illustration {width:82px;height:82px;flex:0 0 82px;
+  border-radius:12px;background:#0f2e34;overflow:hidden;}
+.spin-visual-roadmap-copy {min-width:0;flex:1;}
+.spin-visual-roadmap-title {font-size:13px;font-weight:730;line-height:1.25;overflow-wrap:anywhere;}
+.spin-visual-roadmap-copy > .small {margin:4px 0 6px;overflow-wrap:anywhere;font-size:11px;}
+.spin-visual-tags {display:flex;flex-wrap:wrap;gap:5px;}
+.spin-visual-tags span {font-size:10px;border-radius:7px;padding:4px 6px;
+  background:var(--surface-3);color:var(--label-2);}
+@media (min-width:720px) {
+  .spin-visual-metrics {grid-template-columns:repeat(4,minmax(0,1fr));}
+  .spin-visual-hero > .spin-illustration {height:220px;}
+}
+@media (max-width:355px) {
+  .spin-visual-hero {padding:15px 15px 0;}
+  .spin-visual-hero h2 {font-size:25px;}
+  .spin-visual-status {font-size:10px;}
+  .spin-visual-metric {padding:12px 9px;}
+  .spin-visual-next > .spin-illustration {width:72px;flex-basis:72px;height:76px;}
+  .spin-visual-roadmap-row > .spin-illustration {width:65px;height:70px;flex-basis:65px;}
+  .spin-visual-tags span {font-size:9px;padding:3px 5px;}
+}
+@media (prefers-reduced-motion: reduce) {
+  .spin-visual-progress > div {transition:none;}
+}
