@@ -1,4 +1,5 @@
 import { SPINNING_CLASSES, durationSeconds } from './spinning.js'
+import { SPINNING_VISUALS } from './spinning-visual.js'
 
 export const GENRES = [
   { value: 'mix', label: 'Mistura de décadas', preset: 'time-machine' },
@@ -74,6 +75,7 @@ export function validateDraft(c, targetMin) {
         pair[0] < 55 || pair[1] > 105 || pair[1] < pair[0]) errors.push('RPM deve estar entre 55 e 105.')
     if (!Number.isInteger(p.rpe) || p.rpe < 2 || p.rpe > 8) errors.push('Esforço deve ficar de 2 a 8.')
     if (!p.name?.trim() || !p.cue?.trim()) errors.push('Todas as etapas precisam de nome e orientação.')
+    if (p.visualKey && !SPINNING_VISUALS.some(x => x.value === p.visualKey)) errors.push('Selecione uma postura visual válida.')
   }
   if (c?.playlistUrl && !playlistProvider(c.playlistUrl)) errors.push('Use um link de playlist do Spotify ou Apple Music.')
   return [...new Set(errors)]
